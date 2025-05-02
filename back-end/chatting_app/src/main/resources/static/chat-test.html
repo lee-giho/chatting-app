@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>채팅방 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h2>🗨️ 채팅방 목록</h2>
+
+<div>
+    <input type="text" id="roomName" placeholder="채팅방 이름 입력" />
+    <button onclick="createRoom()">방 만들기</button>
+</div>
+
+<ul id="room-list"></ul>
+
+<hr/>
+
+<div id="chat-area" style="display:none;">
+    <h3 id="chat-room-title"></h3>
+    <input type="text" id="sender" placeholder="닉네임" />
+    <input type="text" id="message" placeholder="메시지 입력" />
+    <button onclick="sendMessage()">전송</button>
+
+    <ul id="chat-box"></ul>
+</div>
+
+<script>
+    let stompClient = null;
+    let currentRoomId = null;
+
+    // 방 생성 요청
+    function createRoom() {
+        const roomName = document.getElementById("roomName").value;
+        if (!roomName) return;
+
+        fetch("/api/rooms?name=" + encodeURIComponent(roomName), {
+            method: "POST"
+        }).then(() => {
+            document.getElementById("roomName").value = '';
+            loadRoomList();
+        });
+    }
+
+    // 방 목록 불러오기
+    function loadRoomList() {
+        fetch("/api/rooms")
+            .then(res => res.json())
+            .then(data => {
+                const roomList = document.getElementById("room-list");
+                roomList.innerHTML = '';
+                data.forEach(room => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `<button onclick="enterRoom('${room.roomId}', '${room.name}')">${room.name}</button>`;
+                    roomList.appendChild(li);
+                });
+            });
+    }
+
+    // 방 입장
+    function enterRoom(roomId, roomName) {
+        currentRoomId = roomId;
+        document.getElementById("chat-area").style.display = "block";
+        document.getElementById("chat-room-title").innerText = "채팅방: " + roomName;
+        document.getElementById("chat-box").innerHTML = "";
+
+        connectWebSocket(roomId);
+    }
+
+    // WebSocket 연결 및 구독
+    function connectWebSocket(roomId) {
+        const socket = new SockJS("/ws-chat");
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function () {
+            stompClient.subscribe("/topic/room/" + roomId, function (msg) {
+                const chat = JSON.parse(msg.body);
+                const li = document.createElement("li");
+                li.innerText = `${chat.sender}: ${chat.content}`;
+                document.getElementById("chat-box").appendChild(li);
+            });
+        });
+    }
+
+    // 메시지 전송
+    function sendMessage() {
+        const sender = document.getElementById("sender").value;
+        const message = document.getElementById("message").value;
+
+        if (!stompClient || !stompClient.connected || !currentRoomId) return;
+
+        stompClient.send("/app/chat.send", {}, JSON.stringify({
+            sender: sender,
+            content: message,
+            roomId: currentRoomId
+        }));
+
+        document.getElementById("message").value = '';
+    }
+
+    // 처음 페이지 로드 시 방 목록 불러오기
+    loadRoomList();
+</script>
+</body>
+</html>
