@@ -1,22 +1,21 @@
 package com.giho.chatting_app.controller;
 
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.giho.chatting_app.service.ChatProducer;
+import com.giho.chatting_app.dto.ChatMessage;
+import com.giho.chatting_app.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-
 
 @RestController
 @RequiredArgsConstructor
 public class ChatController {
-  private final ChatProducer chatProducer;
+  
+  private final ChatService chatService;
 
-  @PostMapping("/send")
-  public String sendMessage(@RequestParam("message") String message) {
-    chatProducer.sendMessage(message);
-    return "Message sent: " + message;
+  @MessageMapping("/chat.send")
+  public void sendMessage(ChatMessage message) {
+    chatService.sendMessage(message);
   }
 }

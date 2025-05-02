@@ -1,5 +1,6 @@
 .idea
 .DS_Store
+*.yml
 
 ### Flutter ###
 # Flutter/Dart/Pub related

@@ -2,6 +2,9 @@ spring:
   application:
     name: chatting_app
 
+  main:
+    web-application-type: servlet
+
   kafka:
     consumer:
       bootstrap-servers: localhost:9092
