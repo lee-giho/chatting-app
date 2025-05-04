@@ -14,5 +14,5 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/chatting_app
+      uri: ${MONGODB_URL}
 
