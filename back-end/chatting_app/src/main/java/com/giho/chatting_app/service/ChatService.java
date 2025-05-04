@@ -18,8 +18,9 @@ public class ChatService {
 
   public void sendMessage(ChatMessage message) {
     try {
+      // 객체를 JSON 문자열로 변환
       String jsonMessage = objectMapper.writeValueAsString(message);
-      kafkaTemplate.send("chat-room", jsonMessage);
+      kafkaTemplate.send("chat-room", jsonMessage); // Kafka에 전송
     } catch (JsonProcessingException e) {
       throw new RuntimeException("메시지 직렬화 실패", e);
     }

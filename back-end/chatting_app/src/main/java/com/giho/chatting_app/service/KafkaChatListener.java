@@ -26,10 +26,10 @@ public class KafkaChatListener {
     try {
       ChatMessage chatMessage = objectMapper.readValue(message, ChatMessage.class);
 
-      // WebSocket 전송
+      // WebSocket 구독자에게 메시지 전송
       messagingTemplate.convertAndSend("/topic/room/" + chatMessage.getRoomId(), chatMessage);
 
-      // MongoDB 저장
+      // MongoDB에 메시지 저장
       ChatMessages chatMessageDocument = ChatMessages.builder()
         .roomId(chatMessage.getRoomId())
         .sender(chatMessage.getSender())

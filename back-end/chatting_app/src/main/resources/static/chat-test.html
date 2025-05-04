@@ -9,27 +9,31 @@
 <body>
 <h2>🗨️ 채팅방 목록</h2>
 
+<!-- 채팅방 생성 -->
 <div>
     <input type="text" id="roomName" placeholder="채팅방 이름 입력" />
     <button onclick="createRoom()">방 만들기</button>
 </div>
 
+<!-- 채팅방 리스트 표시 영역 -->
 <ul id="room-list"></ul>
 
 <hr/>
 
+<!-- 채팅 영역 - 채팅방 입장하면 표시됨 -->
 <div id="chat-area" style="display:none;">
     <h3 id="chat-room-title"></h3>
     <input type="text" id="sender" placeholder="닉네임" />
     <input type="text" id="message" placeholder="메시지 입력" />
     <button onclick="sendMessage()">전송</button>
 
+    <!-- 수신된 채팅 메시지 출력 영역 -->
     <ul id="chat-box"></ul>
 </div>
 
 <script>
-    let stompClient = null;
-    let currentRoomId = null;
+    let stompClient = null; // STOMP 클라이언트 객체
+    let currentRoomId = null; // 현재 입장한 방의 ID
 
     // 방 생성 요청
     function createRoom() {
@@ -40,7 +44,7 @@
             method: "POST"
         }).then(() => {
             document.getElementById("roomName").value = '';
-            loadRoomList();
+            loadRoomList(); // 방 목록 새로고침
         });
     }
 
@@ -66,14 +70,16 @@
         document.getElementById("chat-room-title").innerText = "채팅방: " + roomName;
         document.getElementById("chat-box").innerHTML = "";
 
-        connectWebSocket(roomId);
+        connectWebSocket(roomId); // WebSocket 연결
     }
 
-    // WebSocket 연결 및 구독
+    // STOMP + WebSocket 연결 및 구독
     function connectWebSocket(roomId) {
-        const socket = new SockJS("/ws-chat");
+        const socket = new SockJS("/ws-chat"); // 백엔드 WebSocket 엔드포인트
         stompClient = Stomp.over(socket);
+
         stompClient.connect({}, function () {
+            // 특정 채팅방 topic 구독
             stompClient.subscribe("/topic/room/" + roomId, function (msg) {
                 const chat = JSON.parse(msg.body);
                 const li = document.createElement("li");
@@ -90,6 +96,7 @@
 
         if (!stompClient || !stompClient.connected || !currentRoomId) return;
 
+        // 서버측 /app/chat.send로 메시지 전송 -> Kafka -> WebSocket으로 다시 수신
         stompClient.send("/app/chat.send", {}, JSON.stringify({
             sender: sender,
             content: message,

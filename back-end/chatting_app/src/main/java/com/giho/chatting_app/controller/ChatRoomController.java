@@ -21,16 +21,19 @@ public class ChatRoomController {
   
   private final ChatRoomService chatRoomService;
 
+  // 채팅방 생성
   @PostMapping
   public ChatRoom createRoom(@RequestParam("name") String name) {
     return chatRoomService.createRoom(name);
   }
 
+  // 전체 채팅방 목록 반환
   @GetMapping
   public List<ChatRoom> getRoomList() {
     return chatRoomService.getAllRooms();
   }
 
+  // 특정 채팅방 반환
   @GetMapping("/{roomId}")
   public ChatRoom getRoom(@PathVariable String roomId) {
     return chatRoomService.findRoomById(roomId);
