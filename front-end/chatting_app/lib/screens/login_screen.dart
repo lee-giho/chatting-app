@@ -1,3 +1,4 @@
+import 'package:chatting_app/screens/register_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -51,8 +52,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              Container( // 로그인 부분
+              Expanded( // 로그인 부분
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Form(
                       key: formKey,
@@ -95,7 +97,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                           ),
-                          Container( // 아이디 입력 부분
+                          SizedBox(height: 20),
+                          Container( // 비밀번호 입력 부분
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -135,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       )
                     ),
-                    SizedBox(height: 50),
+                    SizedBox(height: 30),
                     Container(
                       child: ElevatedButton(
                         onPressed: () {
@@ -165,6 +168,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextButton(
                           onPressed: () {
                             print("회원가입 클릭!!!");
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RegisterScreen()
+                              )
+                            );
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.white
