@@ -72,6 +72,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             TextFormField(
                               controller: idController,
                               focusNode: idFocus,
+                              validator: (value) {
+                                
+                              },
                               decoration: const InputDecoration(
                                 hintText: "아이디를 입력해주세요.",
                                 enabledBorder: OutlineInputBorder(

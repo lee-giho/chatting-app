@@ -16,3 +16,9 @@ spring:
     mongodb:
       uri: ${MONGODB_URL}
 
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/chattingApp
+    username: root
+    password: ${MYSQL_PASSWORD}
+
