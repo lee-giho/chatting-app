@@ -21,4 +21,7 @@ spring:
     url: jdbc:mysql://localhost:3306/chattingApp
     username: root
     password: ${MYSQL_PASSWORD}
-
+  
+server:
+  address: 0.0.0.0
+  port: 8080

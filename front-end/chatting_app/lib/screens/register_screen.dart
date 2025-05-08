@@ -1,4 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +26,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  bool idNotDuplication = false;
+
   @override
   void dispose() {
     super.dispose();
@@ -34,6 +41,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
     passwordFocus.dispose();
     rePasswordFocus.dispose();
     nickNameFocus.dispose();
+  }
+
+  // 아이디 중복확인 요청 함수
+  Future<void> checkIdDuplication() async {
+    String id = idController.text;
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/auth/duplication/id?id=$id");
+    final headers = {'Content-Type': 'application/json'};
+
+    try {
+      final response = await http.get(
+        apiAddress,
+        headers: headers
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print("data: $data");
+        bool isDuplication = data["isDuplication"];
+
+        setState(() {
+          idNotDuplication = !isDuplication;
+        });
+
+        if (idNotDuplication) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("사용 가능한 아이디입니다."))
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("중복된 아이디입니다."))
+          );
+        }
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("아이디 중복 확인 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
   }
 
   @override
@@ -69,31 +124,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 fontWeight: FontWeight.bold
                               ),
                             ),
-                            TextFormField(
-                              controller: idController,
-                              focusNode: idFocus,
-                              validator: (value) {
-                                
-                              },
-                              decoration: const InputDecoration(
-                                hintText: "아이디를 입력해주세요.",
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(5)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: idController,
+                                    focusNode: idFocus,
+                                    validator: (value) {
+                                      
+                                    },
+                                    decoration: const InputDecoration(
+                                      hintText: "아이디를 입력해주세요.",
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(5)
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: Color.fromRGBO(121, 55, 64, 0.612)
+                                        )
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(5)
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: Color.fromRGBO(122, 11, 11, 1)
+                                        )
+                                      )
+                                    ),
                                   ),
-                                  borderSide: BorderSide(
-                                    color: Color.fromRGBO(121, 55, 64, 0.612)
-                                  )
                                 ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(5)
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    checkIdDuplication();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    minimumSize: const Size(100, 50),
+                                    backgroundColor: const Color.fromRGBO(122, 11, 11, 1) ,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5)
+                                    )
                                   ),
-                                  borderSide: BorderSide(
-                                    color: Color.fromRGBO(122, 11, 11, 1)
+                                  child: const Text(
+                                    "중복확인",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold
+                                    ),
                                   )
                                 )
-                              ),
+                              ],
                             )
                           ],
                         ),

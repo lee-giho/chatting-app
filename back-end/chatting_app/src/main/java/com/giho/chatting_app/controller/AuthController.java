@@ -21,6 +21,7 @@ public class AuthController {
   @GetMapping("/duplication/id")
   public ResponseEntity<DuplicationResponse> checkIdDuplication(@RequestParam("id") String id) {
     DuplicationResponse duplicationResponse = authService.checkIdDuplication(id);
+    System.out.println(duplicationResponse);
     return ResponseEntity.ok(duplicationResponse);
   }
 }
