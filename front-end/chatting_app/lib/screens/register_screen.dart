@@ -73,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print("data: $data");
-        bool isDuplication = data["isDuplication"];
+        bool isDuplication = data["bool"];
 
         setState(() {
           idNotDuplication = !isDuplication;
@@ -122,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print("data: $data");
-        bool isDuplication = data["isDuplication"];
+        bool isDuplication = data["bool"];
 
         setState(() {
           nickNameNotDuplication = !isDuplication;
@@ -143,6 +143,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("닉네임 중복 확인 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
+  // 회원가입 요청 함수
+  Future<void> signUp() async {
+    final id = idController.text;
+    final password = passwordController.text;
+    final nickName = nickNameController.text;
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/auth/signUp");
+    final headers = {'Content-Type': 'application/json'};
+
+    try {
+      final response = await http.post(
+        apiAddress,
+        headers: headers,
+        body: json.encode({
+          "id": id,
+          "password": password,
+          "nickName": nickName
+        })
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("회원가입 성공"))
+        );
+
+        Navigator.pop(context);
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("회원가입 실패"))
         );
       }
     } catch (e) {
@@ -373,7 +416,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     },
                                     onChanged: (value) {
                                       setState(() {
-                                        isNickNameInput = nickNameController.text.trim().isNotEmpty;
+                                        isNickNameInput = Checkvalidate().checkNickNameInput(nickNameController.text);
                                         nickNameNotDuplication = false;
                                         isNickNameValid = Checkvalidate().validateNickName(value, nickNameNotDuplication) == null;
                                       });
@@ -435,6 +478,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onPressed: isIdValid && isPasswordValid && isRePasswordValid && isNickNameValid
                 ? () {
                     print("회원가입 버튼 클릭!!!");
+                    signUp();
                   }
                 : null,
                 style: ElevatedButton.styleFrom(

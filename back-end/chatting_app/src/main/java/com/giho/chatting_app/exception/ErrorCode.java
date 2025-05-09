@@ -9,6 +9,10 @@ import lombok.Getter;
 @Getter
 public enum ErrorCode {
 
+  // 사용자
+  DUPLICATE_USER_ID(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다."),
+  DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
+
   // 인증/인가 관련
   INVALID_TOKEN_SIGNATURE(HttpStatus.UNAUTHORIZED, "잘못된 비밀키입니다."),
   TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다."),

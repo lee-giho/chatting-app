@@ -58,12 +58,21 @@ class Checkvalidate {
       return "닉네임을 입력해주세요.";
     } else if (!regExp.hasMatch(nickName)) {
       return "앞/뒤 공백 없이 한 글자 이상 입력해주세요.";
-    } else {
+    } else if (nickName.length > 12) {
+      return "12자리 이하로 입력해주세요.";
+    } 
+    else {
       if (nickNameValid == false) {
         return "중복확인을 해주세요.";
       } else {
         return null;
       }
     }
+  }
+
+  bool checkNickNameInput(String nickName) {
+    String pattern = r'^(?!\s*$).{1,12}$';
+    RegExp regExp = RegExp(pattern);
+    return regExp.hasMatch(nickName); // true이면 유효한 닉네임, false이면 비유효한 닉네임
   }
 }

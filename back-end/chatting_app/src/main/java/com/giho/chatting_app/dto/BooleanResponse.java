@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class DuplicationResponse {
-  private Boolean isDuplication;
+public class BooleanResponse {
+  private Boolean bool;
 }
