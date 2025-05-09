@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:chatting_app/screens/home_screen.dart';
 import 'package:chatting_app/screens/register_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:flutter/material.dart';
@@ -70,12 +71,19 @@ class _LoginScreenState extends State<LoginScreen> {
         String refreshToken = data["refreshToken"];
 
         // SecureStorage에 값 저장
-        await Securestorage.saveAccessToken(accessToken);
-        await Securestorage.saveRefreshToken(refreshToken);
-        await Securestorage.saveIsAutoLogin(isAutoLogin);
+        await SecureStorage.saveAccessToken(accessToken);
+        await SecureStorage.saveRefreshToken(refreshToken);
+        await SecureStorage.saveIsAutoLogin(isAutoLogin);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("로그인 성공"))
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen()
+          )
         );
       } else {
         log(response.body);

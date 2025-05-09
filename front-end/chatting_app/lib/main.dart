@@ -1,4 +1,4 @@
-import 'package:chatting_app/screens/login_screen.dart';
+import 'package:chatting_app/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.light(), // 기본 컬러 스킴을 밝은 모드로 설정
           primarySwatch: Colors.blue,
         ),
-        home: const LoginScreen(),
+        home: const SplashScreen(),
       );
     });
   }

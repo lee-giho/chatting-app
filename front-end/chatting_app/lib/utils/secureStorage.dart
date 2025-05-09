@@ -1,6 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class Securestorage {
+class SecureStorage {
   
   // FlutterSecureStorage 인스턴스 생성
   static final storage = FlutterSecureStorage();
@@ -62,6 +62,6 @@ class Securestorage {
   static Future<void> deleteTokensAndAutoLogin() async {
     await storage.delete(key: "accessToken");
     await storage.delete(key: "refreshToken");
-    await storage.delete(key: "autoLogin");
+    await saveIsAutoLogin(false);
   }
 }
