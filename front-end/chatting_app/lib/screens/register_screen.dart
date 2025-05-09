@@ -70,6 +70,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         headers: headers
       );
 
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print("data: $data");
@@ -118,6 +120,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         apiAddress,
         headers: headers
       );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -174,6 +178,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           "nickName": nickName
         })
       );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(

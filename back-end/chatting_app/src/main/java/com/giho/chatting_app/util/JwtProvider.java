@@ -52,7 +52,7 @@ public class JwtProvider {
 
     return Jwts.builder()
       .setHeaderParam(Header.TYPE, Header.JWT_TYPE) // 헤더 type : JWT
-      .setIssuer(issuer) // 내용 iss : gachi_janchi
+      .setIssuer(issuer) // 내용 iss : chatting_app
       .setIssuedAt(now) // 내용 iat : 현재 시간
       .setExpiration(expireDate) // 내용 exp : 만료 시간
       .setSubject(user.getId()) // 내용 sub : 유저 아이디
@@ -72,7 +72,7 @@ public class JwtProvider {
 
     return Jwts.builder()
       .setHeaderParam(Header.TYPE, Header.JWT_TYPE) // 헤더 type : JWT
-      .setIssuer(issuer) // 내용 iss : gachi_janchi
+      .setIssuer(issuer) // 내용 iss : chatting_app
       .setIssuedAt(now) // 내용 iat : 현재 시간
       .setExpiration(expireDate) // 내용 exp : 만료 시간
       .setSubject(user.getId()) // 내용 sub : 유저 아이디

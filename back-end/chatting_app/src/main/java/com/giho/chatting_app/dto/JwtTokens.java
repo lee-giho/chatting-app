@@ -1,0 +1,13 @@
+package com.giho.chatting_app.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
+@Builder
+public class JwtTokens {
+  private String accessToken;
+  private String refreshToken;
+}

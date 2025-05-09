@@ -1,5 +1,11 @@
+import 'dart:developer';
+
 import 'package:chatting_app/screens/register_screen.dart';
+import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +24,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  // 값 입력 여부
+  bool isIdInput = false;
+  bool isPasswordInput = false;
+
+  // 자동 로그인 여부
+  bool? isAutoLogin = false;
+
   @override
   void dispose() {
     super.dispose();
@@ -27,6 +40,57 @@ class _LoginScreenState extends State<LoginScreen> {
 
     idFocus.dispose();
     passwordFocus.dispose();
+  }
+
+  // 로그인 함수
+  Future<void> login() async {
+    String id = idController.text;
+    String password = passwordController.text;
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/auth/login");
+    final headers = {'Content-Type': 'application/json'};
+
+    try {
+      final response = await http.post(
+        apiAddress,
+        headers: headers,
+        body: json.encode({
+          "id": id,
+          "password": password
+        })
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print(data);
+        String accessToken = data["accessToken"];
+        String refreshToken = data["refreshToken"];
+
+        // SecureStorage에 값 저장
+        await Securestorage.saveAccessToken(accessToken);
+        await Securestorage.saveRefreshToken(refreshToken);
+        await Securestorage.saveIsAutoLogin(isAutoLogin);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("로그인 성공"))
+        );
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("로그인 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
   }
 
   @override
@@ -74,6 +138,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 TextFormField(
                                   controller: idController,
                                   focusNode: idFocus,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      isIdInput = idController.text.trim().isNotEmpty;
+                                    });
+                                  },
                                   decoration: const InputDecoration(
                                     hintText: "아이디를 입력해주세요.",
                                     enabledBorder: OutlineInputBorder(
@@ -112,6 +181,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 TextFormField(
                                   controller: passwordController,
                                   focusNode: passwordFocus,
+                                  obscureText: true,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      isPasswordInput = passwordController.text.trim().isNotEmpty;
+                                    });
+                                  },
                                   decoration: const InputDecoration(
                                     hintText: "비밀번호를 입력해주세요.",
                                     enabledBorder: OutlineInputBorder(
@@ -138,28 +213,58 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       )
                     ),
-                    SizedBox(height: 30),
-                    Container(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          print("로그인 버튼 클릭!!!");
-                        },
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(50),
-                          backgroundColor:const Color.fromRGBO(122, 11, 11, 1),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)
-                          )
-                        ),
-                        child: const Text(
-                          "로그인",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold
+                    SizedBox(height: 20),
+                    Column(
+                      children: [
+                        Container( // 자동 로그인 체크박스
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15)
+                                ),
+                                value: isAutoLogin,
+                                onChanged: (value) {
+                                  setState(() {
+                                    isAutoLogin = value;
+                                  });
+                                }
+                              ),
+                              const Text(
+                                "로그인 상태 유지",
+                                style: TextStyle(
+                                  fontSize: 18
+                                ),
+                              )
+                            ],
                           ),
-                        )
-                      ),
+                        ),
+                        Container( // 로그인 버튼
+                          child: ElevatedButton(
+                            onPressed: isIdInput && isPasswordInput
+                            ? () {
+                                print("로그인 버튼 클릭!!!");
+                                login();
+                              }
+                            : null,
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(50),
+                              backgroundColor:const Color.fromRGBO(122, 11, 11, 1),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5)
+                              )
+                            ),
+                            child: const Text(
+                              "로그인",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold
+                              ),
+                            )
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 5),
                     Row(

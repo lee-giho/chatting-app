@@ -7,10 +7,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.giho.chatting_app.domain.User;
 import com.giho.chatting_app.dto.BooleanResponse;
+import com.giho.chatting_app.dto.JwtTokens;
+import com.giho.chatting_app.dto.LoginRequest;
 import com.giho.chatting_app.dto.SignUpRequest;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
 import com.giho.chatting_app.repository.UserRepository;
+import com.giho.chatting_app.util.JwtProvider;
 
 @Service
 public class AuthService {
@@ -20,6 +23,9 @@ public class AuthService {
 
   @Autowired
   private PasswordEncoder passwordEncoder;
+
+  @Autowired
+  private JwtProvider jwtProvider;
 
   // 아이디 중복확인
   public BooleanResponse checkIdDuplication(String id) {
@@ -54,5 +60,19 @@ public class AuthService {
 
     return new BooleanResponse(true);
   }
-  
+
+  // 로그인
+  public JwtTokens login(LoginRequest loginRequest) {
+    User user = userRepository.findById(loginRequest.getId())
+      .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+      throw new CustomException(ErrorCode.INVALID_PASSWORD);
+    }
+
+    return JwtTokens.builder()
+      .accessToken(jwtProvider.generateAccessToken(user))
+      .refreshToken(jwtProvider.generateRefreshToken(user))
+      .build();
+  }
 }

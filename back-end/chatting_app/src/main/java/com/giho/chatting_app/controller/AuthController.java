@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.giho.chatting_app.dto.BooleanResponse;
+import com.giho.chatting_app.dto.JwtTokens;
+import com.giho.chatting_app.dto.LoginRequest;
 import com.giho.chatting_app.dto.SignUpRequest;
 import com.giho.chatting_app.service.AuthService;
 
@@ -42,5 +44,13 @@ public class AuthController {
     BooleanResponse booleanResponse = authService.signUp(signUpRequest);
     System.out.println(booleanResponse);
     return ResponseEntity.ok(booleanResponse);
+  }
+  
+  // 로그인 엔드포인트
+  @PostMapping("/login")
+  public ResponseEntity<JwtTokens> login(@RequestBody LoginRequest loginRequest) {
+    JwtTokens jwtTokens = authService.login(loginRequest);
+    System.out.println(jwtTokens);
+    return ResponseEntity.ok(jwtTokens);
   }
 }
