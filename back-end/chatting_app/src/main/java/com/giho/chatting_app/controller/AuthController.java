@@ -24,4 +24,12 @@ public class AuthController {
     System.out.println(duplicationResponse);
     return ResponseEntity.ok(duplicationResponse);
   }
+
+  // 닉네임 중복확인 엔드포인트
+  @GetMapping("/duplication/nickName")
+  public ResponseEntity<DuplicationResponse> checkNickNameDuplication(@RequestParam("nickName") String nickName) {
+    DuplicationResponse duplicationResponse = authService.checkNickNameDuplication(nickName);
+    System.out.println(duplicationResponse);
+    return ResponseEntity.ok(duplicationResponse);
+  }
 }

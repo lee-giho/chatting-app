@@ -15,5 +15,10 @@ public class AuthService {
     boolean idDuplication = userRepository.existsById(id);
     return new DuplicationResponse(idDuplication);
   }
+
+  public DuplicationResponse checkNickNameDuplication(String nickName) {
+    boolean nickNameDuplication = userRepository.existsByNickName(nickName);
+    return new DuplicationResponse(nickNameDuplication);
+  }
   
 }
