@@ -1,5 +1,6 @@
 import 'package:chatting_app/screens/chat_room_list_screen.dart';
 import 'package:chatting_app/screens/friend_list_screen.dart';
+import 'package:chatting_app/screens/myPage_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -24,7 +25,8 @@ class _MainScreenState extends State<MainScreen> {
 
     final List<Widget> screens = [
       FriendListScreen(),
-      ChatRoomListScreen()
+      ChatRoomListScreen(),
+      MyPageScreen()
     ];
 
     return Scaffold(
@@ -48,6 +50,13 @@ class _MainScreenState extends State<MainScreen> {
               size: 30,
             ),
             label: "채팅방"
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.settings,
+              size: 30,
+            ),
+            label: "설정"
           )
         ],
         selectedItemColor: const Color.fromRGBO(138, 50, 50, 1),

@@ -1,4 +1,5 @@
 import 'package:chatting_app/screens/splash_screen.dart';
+import 'package:chatting_app/utils/screen_size.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -13,6 +14,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    ScreenSize().init(width: size.width, height: size.height);
+    
     return LayoutBuilder(builder: (context, constraints) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
