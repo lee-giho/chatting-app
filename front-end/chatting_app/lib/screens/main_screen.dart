@@ -56,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
               Icons.settings,
               size: 30,
             ),
-            label: "설정"
+            label: "마이페이지"
           )
         ],
         selectedItemColor: const Color.fromRGBO(138, 50, 50, 1),

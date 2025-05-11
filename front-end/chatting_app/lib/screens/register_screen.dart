@@ -175,7 +175,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         body: json.encode({
           "id": id,
           "password": password,
-          "nickName": nickName
+          "nickName": nickName,
+          "profileImage": "default"
         })
       );
 

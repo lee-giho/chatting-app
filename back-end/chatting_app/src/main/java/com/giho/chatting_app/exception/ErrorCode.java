@@ -22,6 +22,11 @@ public enum ErrorCode {
   MALFORMED_JWT(HttpStatus.BAD_REQUEST, "유효하지 않은 JWT입니다."),
   UNSUPPORTED_JWT(HttpStatus.BAD_REQUEST, "지원되지 않는 JWT 형식입니다."),
 
+  // 파일 처리
+  FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다."),
+  FILE_STORAGE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장 중 오류가 발생했습니다."),
+  FILE_DELETE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제 중 오류가 발생했습니다."),
+
   // 일반
   BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");

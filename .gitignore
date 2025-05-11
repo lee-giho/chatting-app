@@ -3,6 +3,7 @@
 *.yml
 .env
 db/
+upload/
 
 ### Flutter ###
 # Flutter/Dart/Pub related

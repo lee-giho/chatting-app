@@ -11,6 +11,17 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: const Text(
+            "채팅목록",
+            style: TextStyle(
+              fontWeight: FontWeight.bold
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: const Text(

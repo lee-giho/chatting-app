@@ -37,7 +37,8 @@ public class SecurityConfig {
       .csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화
       .authorizeHttpRequests(auth -> auth
         .requestMatchers(
-          "/api/auth/**"
+          "/api/auth/**",
+          "/images/profile/**"
         ).permitAll() // 인증 없이 접근 가능
         .anyRequest().authenticated() // 나머지 요청은 인증 필요
       )

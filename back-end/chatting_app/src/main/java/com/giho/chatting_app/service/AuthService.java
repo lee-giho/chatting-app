@@ -55,6 +55,7 @@ public class AuthService {
       .id(signUpRequest.getId())
       .password(passwordEncoder.encode(signUpRequest.getPassword()))
       .nickName(signUpRequest.getNickName())
+      .profileImage("default")
       .build();
     userRepository.save(user);
 

@@ -23,27 +23,20 @@ class _UserTileState extends State<UserTile> {
       },
       child: Row(
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              border: Border.all(width: 1),
-              borderRadius: BorderRadius.circular(25)
-            ),
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: profileImage != "default"
+              ? NetworkImage(
+                  "${dotenv.env["API_ADDRESS"]}/images/profile/${profileImage}"
+                )
+              : null,
             child: profileImage == "default"
-            ? const Padding(
-                padding: EdgeInsets.all(3.0),
-                child: Icon(
+              ? Icon(
                   Icons.person,
-                  size: 44,
-                ),
-              )
-            : CircleAvatar(
-              radius: 25,
-              backgroundImage: NetworkImage(
-                "${dotenv.env["API_ADDRESS"]}/images/profile/${profileImage}"
-              ),
-            )
+                  size: 34,
+                )
+              : null
           ),
           SizedBox(width: 20),
           Text(
