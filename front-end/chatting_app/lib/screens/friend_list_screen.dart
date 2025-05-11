@@ -1,3 +1,4 @@
+import 'package:chatting_app/widget/userTile.dart';
 import 'package:flutter/material.dart';
 
 class FriendListScreen extends StatefulWidget {
@@ -12,9 +13,18 @@ class _FriendListScreenState extends State<FriendListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: const Text(
-            "친구 리스트"
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
+          child: Column(
+            children: [
+              UserTile(
+                userInfo: {
+                  "profileImage": "default",
+                  "nickName": "가나다"
+                },
+              )
+            ],
           ),
         ),
       ),
