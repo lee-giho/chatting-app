@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:chatting_app/screens/home_screen.dart';
+import 'package:chatting_app/screens/main_screen.dart';
 import 'package:chatting_app/screens/register_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const HomeScreen()
+            builder: (context) => const MainScreen()
           )
         );
       } else {

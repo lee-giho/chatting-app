@@ -1,4 +1,4 @@
-import 'package:chatting_app/screens/home_screen.dart';
+import 'package:chatting_app/screens/main_screen.dart';
 import 'package:chatting_app/screens/login_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/utils/tokenService.dart';
@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const HomeScreen()
+              builder: (context) => const MainScreen()
             )
           );
         } else { // accessToken이 만료되었으면 refreshToken으로 새로운 accessToken 발급
@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const HomeScreen()
+                builder: (context) => const MainScreen()
               )
             );
           } else { // refreshToken도 만료되었을 때
