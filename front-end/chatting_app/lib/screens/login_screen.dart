@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:chatting_app/screens/main_screen.dart';
 import 'package:chatting_app/screens/register_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
+import 'package:chatting_app/utils/webSocket.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -78,6 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("로그인 성공"))
         );
+
+        // 친구 요청 알림 WebSocket 연결
+        Websocket().connectToWebSocket(id);
 
         Navigator.pushReplacement(
           context,

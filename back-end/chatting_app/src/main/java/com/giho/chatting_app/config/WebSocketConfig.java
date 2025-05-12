@@ -13,6 +13,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer{
   // WebSocket 연결 엔드포인트 등록
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
+    registry.addEndpoint("/ws-chat").setAllowedOriginPatterns("*");
     registry.addEndpoint("/ws-chat").setAllowedOriginPatterns("*").withSockJS(); // ws-chat으로 연결
   }
 

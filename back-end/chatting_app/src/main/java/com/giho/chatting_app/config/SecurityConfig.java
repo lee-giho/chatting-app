@@ -38,7 +38,10 @@ public class SecurityConfig {
       .authorizeHttpRequests(auth -> auth
         .requestMatchers(
           "/api/auth/**",
-          "/images/profile/**"
+          "/images/profile/**",
+          "/ws-chat/**",
+          "/topic/**",
+          "/app/**"
         ).permitAll() // 인증 없이 접근 가능
         .anyRequest().authenticated() // 나머지 요청은 인증 필요
       )
