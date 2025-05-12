@@ -1,6 +1,8 @@
 import 'dart:developer';
 
+import 'package:chatting_app/screens/add_friend_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
+import 'package:chatting_app/utils/webSocket.dart';
 import 'package:chatting_app/widget/userTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -22,6 +24,19 @@ class _FriendListScreenState extends State<FriendListScreen> {
   void initState() {
     super.initState();
     getMyInfo();
+    WebSocket().addFriendRequestListener(onFriendRequestReceived);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    WebSocket().removeFriendRequestListener(onFriendRequestReceived);
+  }
+
+  void onFriendRequestReceived(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message))
+    );
   }
 
   // 내정보 요청 함수
@@ -69,11 +84,30 @@ class _FriendListScreenState extends State<FriendListScreen> {
       appBar: AppBar(
         title: Align(
           alignment: Alignment.centerLeft,
-          child: const Text(
-            "친구목록",
-            style: TextStyle(
-              fontWeight: FontWeight.bold
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "친구목록",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.person_add,
+                  color: Colors.black,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddFriendScreen()
+                    )
+                  );
+                },
+              )
+            ],
           ),
         ),
       ),

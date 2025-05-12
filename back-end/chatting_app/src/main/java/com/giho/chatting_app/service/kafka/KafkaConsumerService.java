@@ -24,7 +24,11 @@ public class KafkaConsumerService {
   private final WebSocketMessageSender messageSender;
 
   // 친구 요청 이벤트 처리
-  @KafkaListener(topics = "friend-request", groupId = "friend-service")
+  @KafkaListener(
+    topics = "friend-request",
+    groupId = "friend-service",
+    containerFactory = "objectKafkaListenerFactory"
+  )
   public void handleFriendRequest(FriendRequestedEvent event) {
     Friend friend = Friend.builder()
       .id(UUID.randomUUID().toString())

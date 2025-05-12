@@ -2,7 +2,9 @@ package com.giho.chatting_app.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.giho.chatting_app.domain.User;
 import com.giho.chatting_app.dto.BooleanResponse;
+import com.giho.chatting_app.dto.SearchUserList;
 import com.giho.chatting_app.dto.UploadProfileImageRequest;
 import com.giho.chatting_app.dto.UserInfo;
 import com.giho.chatting_app.exception.CustomException;
@@ -120,5 +123,25 @@ public class UserService {
     userRepository.save(user);
 
     return new BooleanResponse(true);
+  }
+
+  // keyword로 사용자 검색
+  public SearchUserList searchUserByKeyword(String token, String keyword) {
+
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String myId = jwtProvider.getUserId(tokenWithoutBearer);
+
+    List<User> users = userRepository.findByIdOrNickName(keyword);
+
+    List<UserInfo> searchUsers = users.stream()
+      .filter(user -> !user.getId().equals(myId)) // 내 정보는 제외
+      .map(user -> UserInfo.builder()
+        .id(user.getId())
+        .nickName(user.getNickName())
+        .profileImage(user.getProfileImage())
+        .build())
+      .collect(Collectors.toList());
+
+    return new SearchUserList(searchUsers);
   }
 }

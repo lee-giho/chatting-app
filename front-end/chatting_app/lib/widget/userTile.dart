@@ -21,31 +21,34 @@ class _UserTileState extends State<UserTile> {
       onTap: () {
         print("$nickName 클릭");
       },
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: Colors.grey[300],
-            backgroundImage: profileImage != "default"
-              ? NetworkImage(
-                  "${dotenv.env["API_ADDRESS"]}/images/profile/${profileImage}"
-                )
-              : null,
-            child: profileImage == "default"
-              ? Icon(
-                  Icons.person,
-                  size: 34,
-                )
-              : null
-          ),
-          SizedBox(width: 20),
-          Text(
-            nickName,
-            style: TextStyle(
-              fontSize: 16
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: profileImage != "default"
+                ? NetworkImage(
+                    "${dotenv.env["API_ADDRESS"]}/images/profile/${profileImage}"
+                  )
+                : null,
+              child: profileImage == "default"
+                ? Icon(
+                    Icons.person,
+                    size: 34,
+                  )
+                : null
             ),
-          )
-        ],
+            SizedBox(width: 20),
+            Text(
+              nickName,
+              style: TextStyle(
+                fontSize: 16
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

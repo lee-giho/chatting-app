@@ -21,7 +21,11 @@ public class KafkaChatListener {
   private final ChatMessageRepository chatMessageRepository;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  @KafkaListener(topics = "chat-room", groupId = "chat-group")
+  @KafkaListener(
+    topics = "chat-room",
+    groupId = "chat-group",
+    containerFactory = "stringKafkaListenerFactory"
+  )
   public void listen(String message) {
     try {
       ChatMessage chatMessage = objectMapper.readValue(message, ChatMessage.class);
