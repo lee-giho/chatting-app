@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.giho.chatting_app.domain.Friend;
+import com.giho.chatting_app.dto.CountResponse;
 import com.giho.chatting_app.service.FriendService;
 import com.giho.chatting_app.service.kafka.KafkaProducerService;
 
@@ -40,9 +41,16 @@ public class FriendController {
   }
 
   // 친구 요청 목록 조회 엔드포인트
-  @GetMapping("requests")
+  @GetMapping("/requests")
   public ResponseEntity<List<Friend>> getReceivedFriendRequests(@RequestParam("userId") String userId) {
     List<Friend> requests = friendService.getReceivedFriendRequests(userId);
     return ResponseEntity.ok(requests);
+  }
+
+  // 친구 수 요청 엔트포인트
+  @GetMapping("/count")
+  public ResponseEntity<CountResponse> getRequestFriendCount(@RequestHeader("Authorization") String token) {
+    CountResponse countResponse = friendService.getRequestFriendCount(token);
+    return ResponseEntity.ok(countResponse);
   }
 }
