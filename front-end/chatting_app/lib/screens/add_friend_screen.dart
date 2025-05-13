@@ -90,6 +90,8 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("친구 요청을 보냈습니다."))
         );
+
+        searchUserByKeyword(); // 다시 검색해 요청 여부 적용
       } else {
         log(response.body);
 
@@ -204,23 +206,30 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                         itemCount: searchUser.length,
                         itemBuilder: (context, index) {
                           final user = searchUser[index];
+                          final userInfo = user["userInfo"];
+                          final isRequest = user["request"];
 
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
                                 child: UserTile(
-                                  userInfo: user
+                                  userInfo: userInfo
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(
-                                  Icons.add,
-                                  color: Colors.black,
-                                ),
+                                icon: isRequest
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.green,
+                                    )
+                                  : const Icon(
+                                      Icons.add,
+                                      color: Colors.black,
+                                    ),
                                 style: IconButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: const Color.fromRGBO(122, 11, 11, 1),
+                                  foregroundColor: Colors.green,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(5),
                                     side: BorderSide(
@@ -228,9 +237,11 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                                     )
                                   )
                                 ),
-                                onPressed: () {
-                                  requestFriend(user["id"]);
-                                },
+                                onPressed: isRequest
+                                  ? null
+                                  : () {
+                                      requestFriend(userInfo["id"]);
+                                    },
                               )
                             ],
                           );

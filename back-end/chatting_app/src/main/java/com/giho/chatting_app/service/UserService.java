@@ -10,13 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.giho.chatting_app.domain.FriendStatus;
 import com.giho.chatting_app.domain.User;
 import com.giho.chatting_app.dto.BooleanResponse;
+import com.giho.chatting_app.dto.SearchUser;
 import com.giho.chatting_app.dto.SearchUserList;
 import com.giho.chatting_app.dto.UploadProfileImageRequest;
 import com.giho.chatting_app.dto.UserInfo;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
+import com.giho.chatting_app.repository.FriendRepository;
 import com.giho.chatting_app.repository.UserRepository;
 import com.giho.chatting_app.util.JwtProvider;
 
@@ -28,6 +31,9 @@ public class UserService {
 
   @Autowired
   private JwtProvider jwtProvider;
+
+  @Autowired
+  private FriendRepository friendRepository;
 
   @Value("${PROFILE_IMAGE_PATH}")
   private String profileImagePath;
@@ -131,9 +137,9 @@ public class UserService {
     String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
     String myId = jwtProvider.getUserId(tokenWithoutBearer);
 
-    List<User> users = userRepository.findByIdOrNickName(keyword);
+    List<User> userList = userRepository.findByIdOrNickName(keyword);
 
-    List<UserInfo> searchUsers = users.stream()
+    List<UserInfo> users = userList.stream()
       .filter(user -> !user.getId().equals(myId)) // 내 정보는 제외
       .map(user -> UserInfo.builder()
         .id(user.getId())
@@ -141,6 +147,17 @@ public class UserService {
         .profileImage(user.getProfileImage())
         .build())
       .collect(Collectors.toList());
+
+    List<SearchUser> searchUsers = users.stream()
+      .map(searchUser -> SearchUser.builder()
+        .userInfo(searchUser)
+        .isRequest(
+          friendRepository.existsByUserIdAndFriendIdAndStatus(myId, searchUser.getId(), FriendStatus.REQUESTED)
+        )
+        .build())
+      .collect(Collectors.toList());
+
+
 
     return new SearchUserList(searchUsers);
   }
