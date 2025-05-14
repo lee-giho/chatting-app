@@ -1,7 +1,5 @@
 package com.giho.chatting_app.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.giho.chatting_app.domain.Friend;
 import com.giho.chatting_app.dto.CountResponse;
+import com.giho.chatting_app.dto.ReceivedFriendListResponse;
 import com.giho.chatting_app.service.FriendService;
 import com.giho.chatting_app.service.kafka.KafkaProducerService;
 
@@ -42,9 +40,9 @@ public class FriendController {
 
   // 친구 요청 목록 조회 엔드포인트
   @GetMapping("/requests")
-  public ResponseEntity<List<Friend>> getReceivedFriendRequests(@RequestParam("userId") String userId) {
-    List<Friend> requests = friendService.getReceivedFriendRequests(userId);
-    return ResponseEntity.ok(requests);
+  public ResponseEntity<ReceivedFriendListResponse> getReceivedFriendRequests(@RequestHeader("Authorization") String token) {
+    ReceivedFriendListResponse receivedFriendListResponse = friendService.getReceivedFriendRequests(token);
+    return ResponseEntity.ok(receivedFriendListResponse);
   }
 
   // 친구 수 요청 엔트포인트

@@ -1,4 +1,11 @@
+import 'dart:developer';
+
+import 'package:chatting_app/utils/secureStorage.dart';
+import 'package:chatting_app/widget/userTile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class RequestFriendScreen extends StatefulWidget {
   const RequestFriendScreen({super.key});
@@ -8,6 +15,54 @@ class RequestFriendScreen extends StatefulWidget {
 }
 
 class _RequestFriendScreenState extends State<RequestFriendScreen> {
+
+  List<dynamic> receivedFriendRequests = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    getReceivedFriendRequests();
+  }
+
+  Future<void> getReceivedFriendRequests() async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/friend/requests");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.get(
+        apiAddress,
+        headers: headers
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        setState(() {
+          receivedFriendRequests = data["receivedFriendRequests"];
+        });
+
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("받은 친구 요청 불러오기 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,8 +77,102 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
           ),
         ),
       ),
-      body: Column(
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
 
+          child: Column(
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverList.builder(
+                      itemCount: receivedFriendRequests.length,
+                      itemBuilder: (context, index) {
+                        final userInfo = receivedFriendRequests[index]["userInfo"];
+                        final friend = receivedFriendRequests[index]["friend"];
+          
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: UserTile(
+                                userInfo: userInfo
+                              ),
+                            ),
+                            Row( // 수락, 거절 버튼 부분
+                              children: [
+                                TextButton( // 수락 버튼
+                                  onPressed: () {
+
+                                  },
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.green,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    )
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(
+                                        Icons.check,
+                                        color: Colors.green,
+                                        size: 24,
+                                      ),
+                                      Text(
+                                        "수락",
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 12
+                                        ),
+                                      )
+                                    ],
+                                  )
+                                ),
+                                TextButton( // 거절 버튼
+                                  onPressed: () {
+
+                                  },
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.green,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    )
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(
+                                        Icons.close,
+                                        color: Colors.red,
+                                        size: 24,
+                                      ),
+                                      Text(
+                                        "거절",
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 12
+                                        ),
+                                      )
+                                    ],
+                                  )
+                                )
+                              ],
+                            )
+                          ],
+                        );
+                      }
+                    )
+                  ],
+                )
+              )
+            ],
+          ),
+        ),
       )
     );
   }
