@@ -10,9 +10,11 @@ import 'dart:convert';
 
 class AddFriendScreen extends StatefulWidget {
   final String myId;
+  final VoidCallback getRequestFriendCount;
   const AddFriendScreen({
     super.key,
-    required this.myId
+    required this.myId,
+    required this.getRequestFriendCount
   });
 
   @override
@@ -30,9 +32,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
   void initState() {
     super.initState();
 
-    WebSocket().addFriendRequestListener(onFriendReceived);
-    WebSocket().addFriendAcceptListener(onFriendReceived);
-    WebSocket().addFriendDeclineListener(onFriendReceived);
+    WebSocket().addVoidFunctionListener(onRefreshScreen);
   }
 
   @override
@@ -42,12 +42,10 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
     searchKeywordController.dispose();
     searchKeywordFocus.dispose();
 
-    WebSocket().removeFriendRequestListener(onFriendReceived);
-    WebSocket().removeFriendAcceptListener(onFriendReceived);
-    WebSocket().removeFriendDeclineListener(onFriendReceived);
+    WebSocket().removeVoidFunctionListener(onRefreshScreen);
   }
 
-  void onFriendReceived(String message) {
+  void onRefreshScreen() {
     searchUserByKeyword();
   }
 
@@ -118,6 +116,82 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("친구 요청을 실패했습니다."))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
+  Future<void> acceptFriend(String toUserId) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/friend/accept?toUserId=$toUserId");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.post(
+        apiAddress,
+        headers: headers
+      );
+
+      if (response.statusCode == 200) {
+        log("acceptFriend: ${response.body}");
+
+        await searchUserByKeyword(); // 사용자 검색 리스트 새로고침
+        widget.getRequestFriendCount(); // 이전 화면에서 친구 요청 수 새로고침
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청을 수락했습니다."))
+        );
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청 수락을 실패했습니다.."))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
+  Future<void> declineFriend(String toUserId) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/friend/decline?toUserId=$toUserId");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.delete(
+        apiAddress,
+        headers: headers
+      );
+
+      if (response.statusCode == 200) {
+        log("acceptFriend: ${response.body}");
+
+        await searchUserByKeyword(); // 사용자 검색 리스트 새로고침
+        widget.getRequestFriendCount(); // 이전 화면에서 친구 요청 수 새로고침
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청을 거절했습니다."))
+        );
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청 수락을 실패했습니다.."))
         );
       }
     } catch (e) {
@@ -230,6 +304,106 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                           final userInfo = user["userInfo"];
                           final friend = user["friend"];
 
+                          Widget? buttonWidget;
+
+                          if (friend != null) {
+                            final friendStatus = friend["status"] ?? "";
+                            final isReceived = widget.myId == friend["friendId"];
+
+                            if (friendStatus == "ACCEPTED") { // 친구 상태인 경우
+                              buttonWidget = IconButton(
+                                icon: Icon(
+                                  Icons.favorite,
+                                  color: Colors.red
+                                ),
+                                onPressed: null
+                              );
+                            } else if (friendStatus == "REQUESTED") { // 요청 상태인 경우
+                              if (isReceived) { // 요청을 받은 경우
+                                buttonWidget = Row( // 수락, 거절 버튼 부분
+                                  children: [
+                                    TextButton( // 수락 버튼
+                                      onPressed: () {
+                                        acceptFriend(friend["userId"]);
+                                      },
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.green,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(5),
+                                        )
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon(
+                                            Icons.check,
+                                            color: Colors.green,
+                                            size: 24,
+                                          ),
+                                          Text(
+                                            "수락",
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 12
+                                            ),
+                                          )
+                                        ],
+                                      )
+                                    ),
+                                    TextButton( // 거절 버튼
+                                      onPressed: () {
+                                        declineFriend(friend["userId"]);
+                                      },
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.green,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(5),
+                                        )
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon(
+                                            Icons.close,
+                                            color: Colors.red,
+                                            size: 24,
+                                          ),
+                                          Text(
+                                            "거절",
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 12
+                                            ),
+                                          )
+                                        ],
+                                      )
+                                    )
+                                  ],
+                                );
+                              } else { // 요청을 한 경우
+                                buttonWidget = IconButton(
+                                  icon: Icon(
+                                    Icons.check,
+                                    color: Colors.green
+                                  ),
+                                  onPressed: null
+                                );
+                              }
+                            }
+                          } else { // 친구 요청 버튼
+                            buttonWidget = IconButton(
+                              icon: Icon(
+                                Icons.add,
+                                color: Colors.black
+                              ),
+                              onPressed: () {
+                                requestFriend(userInfo["id"]);
+                              }
+                            );
+                          }
+
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -238,32 +412,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                                   userInfo: userInfo
                                 ),
                               ),
-                              IconButton(
-                                icon: friend != null
-                                  ? const Icon( // 친구 요청 아이콘
-                                      Icons.check,
-                                      color: Colors.green,
-                                    )
-                                  : const Icon( // 친구 관계가 없을 때
-                                      Icons.add,
-                                      color: Colors.black,
-                                    ),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.green,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                    side: BorderSide(
-                                      width: 1
-                                    )
-                                  )
-                                ),
-                                onPressed: friend != null
-                                  ? null
-                                  : () { // 친구 관계가 없을 때
-                                      requestFriend(userInfo["id"]);
-                                    },
-                              )
+                              buttonWidget!
                             ],
                           );
                         }

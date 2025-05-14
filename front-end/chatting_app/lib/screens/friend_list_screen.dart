@@ -28,7 +28,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     getMyInfo();
     getRequestFriendCount();
 
@@ -154,6 +154,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
                     MaterialPageRoute(
                       builder: (context) => AddFriendScreen(
                         myId: myInfo["id"],
+                        getRequestFriendCount: getRequestFriendCount,
                       )
                     )
                   );
