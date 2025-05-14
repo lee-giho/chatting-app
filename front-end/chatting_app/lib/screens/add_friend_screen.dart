@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:chatting_app/utils/secureStorage.dart';
+import 'package:chatting_app/utils/webSocket.dart';
 import 'package:chatting_app/widget/userTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -26,12 +27,28 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
   List<dynamic> searchUser = [];
 
   @override
+  void initState() {
+    super.initState();
+
+    WebSocket().addFriendRequestListener(onFriendReceived);
+    WebSocket().addFriendAcceptListener(onFriendReceived);
+    WebSocket().addFriendDeclineListener(onFriendReceived);
+  }
+
+  @override
   void dispose() {
     super.dispose();
 
     searchKeywordController.dispose();
-
     searchKeywordFocus.dispose();
+
+    WebSocket().removeFriendRequestListener(onFriendReceived);
+    WebSocket().removeFriendAcceptListener(onFriendReceived);
+    WebSocket().removeFriendDeclineListener(onFriendReceived);
+  }
+
+  void onFriendReceived(String message) {
+    searchUserByKeyword();
   }
 
   // 검색어로 사용자 검색하기

@@ -7,8 +7,11 @@ class WebSocket {
   factory WebSocket() => instance;
   WebSocket.internal();
 
+  final List<void Function(String)> showMessageListeners = [];
+  final List<void Function()> voidFunctionListeners = [];
   final List<void Function(String)> friendRequestListeners = [];
   final List<void Function(String)> friendAcceptListeners = [];
+  final List<void Function(String)> friendDeclineListeners = [];
 
   bool isConnected = false;
 
@@ -33,6 +36,12 @@ class WebSocket {
               for (var listener in friendRequestListeners) {
                 listener(message);
               }
+              for (var listener in showMessageListeners) {
+                listener(message);
+              }
+              for (var listener in voidFunctionListeners) {
+                listener();
+              }
             }
           );
 
@@ -45,6 +54,30 @@ class WebSocket {
               for (var listener in friendAcceptListeners) {
                 listener(message);
               }
+              for (var listener in showMessageListeners) {
+                listener(message);
+              }
+              for (var listener in voidFunctionListeners) {
+                listener();
+              }
+            }
+          );
+
+          // 친구 거절 알림 구독
+          stompClient.subscribe(
+            destination: "/topic/friend-decline/$myUserId",
+            callback: (frame) {
+              final message = frame.body ?? "";
+              print("친구 거절 수신: $message");
+              for (var listener in friendDeclineListeners) {
+                listener(message);
+              }
+              for (var listener in showMessageListeners) {
+                listener(message);
+              }
+              for (var listener in voidFunctionListeners) {
+                listener();
+              }
             }
           );
         },
@@ -53,6 +86,26 @@ class WebSocket {
     );
 
     stompClient.activate();
+  }
+
+  // 메시지 보여주는 요청 콜백 등록
+  void addShowMessageListener(void Function(String message) callback) {
+    showMessageListeners.add(callback);
+  }
+
+  // 메시지 보여주는 요청 콜백 해제
+  void removeShowMessageListener(void Function(String message) callback) {
+    showMessageListeners.remove(callback);
+  }
+
+  // void를 갖는 함수 콜백 등록
+  void addVoidFunctionListener(void Function() callback) {
+    voidFunctionListeners.add(callback);
+  }
+
+  // void를 갖는 함수 콜백 해제
+  void removeVoidFunctionListener(void Function() callback) {
+    voidFunctionListeners.remove(callback);
   }
 
   // 친구 요청 콜백 등록
@@ -74,4 +127,16 @@ class WebSocket {
   void removeFriendAcceptListener(void Function(String message) callback) {
     friendAcceptListeners.remove(callback);
   }
+
+  // 친구 거절 콜백 등록
+  void addFriendDeclineListener(void Function(String message) callback) {
+    friendDeclineListeners.add(callback);
+  }
+
+  // 친구 거절 콜백 해제
+  void removeFriendDeclineListener(void Function(String message) callback) {
+    friendDeclineListeners.remove(callback);
+  }
+
+  
 }

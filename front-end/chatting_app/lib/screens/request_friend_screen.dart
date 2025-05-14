@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:chatting_app/utils/secureStorage.dart';
+import 'package:chatting_app/utils/webSocket.dart';
 import 'package:chatting_app/widget/userTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -26,6 +27,19 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
   void initState() {
     super.initState();
 
+    getReceivedFriendRequests();
+
+    WebSocket().addVoidFunctionListener(onRefreshScreen);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+
+    WebSocket().removeVoidFunctionListener(onRefreshScreen);
+  }
+
+  void onRefreshScreen() {
     getReceivedFriendRequests();
   }
 
@@ -88,6 +102,44 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("친구 요청을 수락했습니다."))
+        );
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청 수락을 실패했습니다.."))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
+  Future<void> declineFriend(String toUserId) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/friend/decline?toUserId=$toUserId");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.delete(
+        apiAddress,
+        headers: headers
+      );
+
+      if (response.statusCode == 200) {
+        log("acceptFriend: ${response.body}");
+
+        await getReceivedFriendRequests(); // 친구 요청 리스트 새로고침
+        widget.getRequestFriendCount(); // 이전 화면에서 친구 요청 수 새로고침
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청을 거절했습니다."))
         );
       } else {
         log(response.body);
@@ -176,7 +228,7 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
                                 ),
                                 TextButton( // 거절 버튼
                                   onPressed: () {
-
+                                    declineFriend(friend["userId"]);
                                   },
                                   style: TextButton.styleFrom(
                                     backgroundColor: Colors.white,

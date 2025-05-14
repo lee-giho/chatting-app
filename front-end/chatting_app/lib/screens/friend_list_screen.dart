@@ -28,37 +28,27 @@ class _FriendListScreenState extends State<FriendListScreen> {
   @override
   void initState() {
     super.initState();
+    
     getMyInfo();
     getRequestFriendCount();
-    WebSocket().addFriendRequestListener(onFriendRequestReceived);
-    WebSocket().addFriendAcceptListener(onFriendAcceptReceived);
+
+    WebSocket().addShowMessageListener(onShowMessage);
   }
 
   @override
   void dispose() {
     super.dispose();
-    WebSocket().removeFriendRequestListener(onFriendRequestReceived);
-    WebSocket().removeFriendAcceptListener(onFriendAcceptReceived);
+
+    WebSocket().removeShowMessageListener(onShowMessage);
   }
 
-  // 친구 요청 알림
-  void onFriendRequestReceived(String message) {
+  // 웹소켓 메시지 알림
+  void onShowMessage(String message) {
     getRequestFriendCount();
-    print("count: $requestFriendCount");
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message))
     );
   }
-
-  // 친구 수락 알림
-  void onFriendAcceptReceived(String message) {
-    getRequestFriendCount();
-    print("count: $requestFriendCount");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message))
-    );
-  }
-
 
 
   // 내정보 요청 함수

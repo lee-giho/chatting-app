@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.giho.chatting_app.domain.Friend;
 import com.giho.chatting_app.domain.FriendStatus;
 import com.giho.chatting_app.event.FriendAcceptedEvent;
+import com.giho.chatting_app.event.FriendDeclinedEvent;
 import com.giho.chatting_app.event.FriendRequestedEvent;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
@@ -67,6 +68,26 @@ public class KafkaProducerService {
       friendRepository.save(friend);
 
       kafkaTemplate.send("friend-accept", new FriendAcceptedEvent(fromUserId, toUserId)).get();
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  public void sendFriendDecline(String token, String toUserId) {
+    
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String fromUserId = jwtProvider.getUserId(tokenWithoutBearer);
+
+    try {
+      Friend friend = friendRepository.findByUserIdAndFriendId(
+        toUserId,
+        fromUserId
+      ).orElseThrow(() -> new CustomException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
+
+      friendRepository.delete(friend);
+
+      kafkaTemplate.send("friend-decline", new FriendDeclinedEvent(fromUserId, toUserId)).get();
     } catch (Exception e) {
       e.printStackTrace();
       throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
