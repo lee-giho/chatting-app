@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         // 친구 요청 알림 WebSocket 연결
-        WebSocket().connectToWebSocket(id);
+        WebSocket().connect(id);
 
         Navigator.pushReplacement(
           context,

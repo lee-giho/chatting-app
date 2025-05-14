@@ -35,6 +35,9 @@ public class UserService {
   @Autowired
   private FriendRepository friendRepository;
 
+  @Autowired
+  private FriendService friendService;
+
   @Value("${PROFILE_IMAGE_PATH}")
   private String profileImagePath;
 
@@ -151,8 +154,8 @@ public class UserService {
     List<SearchUser> searchUsers = users.stream()
       .map(searchUser -> SearchUser.builder()
         .userInfo(searchUser)
-        .isRequest(
-          friendRepository.existsByUserIdAndFriendIdAndStatus(myId, searchUser.getId(), FriendStatus.REQUESTED)
+        .friend(
+          friendService.isFriend(myId, searchUser.getId())
         )
         .build())
       .collect(Collectors.toList());

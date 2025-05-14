@@ -31,14 +31,17 @@ class _FriendListScreenState extends State<FriendListScreen> {
     getMyInfo();
     getRequestFriendCount();
     WebSocket().addFriendRequestListener(onFriendRequestReceived);
+    WebSocket().addFriendAcceptListener(onFriendAcceptReceived);
   }
 
   @override
   void dispose() {
     super.dispose();
     WebSocket().removeFriendRequestListener(onFriendRequestReceived);
+    WebSocket().removeFriendAcceptListener(onFriendAcceptReceived);
   }
 
+  // 친구 요청 알림
   void onFriendRequestReceived(String message) {
     getRequestFriendCount();
     print("count: $requestFriendCount");
@@ -46,6 +49,17 @@ class _FriendListScreenState extends State<FriendListScreen> {
       SnackBar(content: Text(message))
     );
   }
+
+  // 친구 수락 알림
+  void onFriendAcceptReceived(String message) {
+    getRequestFriendCount();
+    print("count: $requestFriendCount");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message))
+    );
+  }
+
+
 
   // 내정보 요청 함수
   Future<void> getMyInfo() async {
@@ -148,7 +162,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AddFriendScreen()
+                      builder: (context) => AddFriendScreen(
+                        myId: myInfo["id"],
+                      )
                     )
                   );
                 },
@@ -181,7 +197,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const RequestFriendScreen()
+                      builder: (context) => RequestFriendScreen(
+                        getRequestFriendCount: getRequestFriendCount,
+                      )
                     )
                   );
                 },

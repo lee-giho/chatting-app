@@ -8,7 +8,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class RequestFriendScreen extends StatefulWidget {
-  const RequestFriendScreen({super.key});
+  final VoidCallback getRequestFriendCount;
+  const RequestFriendScreen({
+    super.key,
+    required this.getRequestFriendCount
+  });
 
   @override
   State<RequestFriendScreen> createState() => _RequestFriendScreenState();
@@ -63,6 +67,44 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
     }
   }
 
+  Future<void> acceptFriend(String toUserId) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/friend/accept?toUserId=$toUserId");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.post(
+        apiAddress,
+        headers: headers
+      );
+
+      if (response.statusCode == 200) {
+        log("acceptFriend: ${response.body}");
+
+        await getReceivedFriendRequests(); // 친구 요청 리스트 새로고침
+        widget.getRequestFriendCount(); // 이전 화면에서 친구 요청 수 새로고침
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청을 수락했습니다."))
+        );
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 요청 수락을 실패했습니다.."))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,7 +147,7 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
                               children: [
                                 TextButton( // 수락 버튼
                                   onPressed: () {
-
+                                    acceptFriend(friend["userId"]);
                                   },
                                   style: TextButton.styleFrom(
                                     backgroundColor: Colors.white,

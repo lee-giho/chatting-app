@@ -8,7 +8,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AddFriendScreen extends StatefulWidget {
-  const AddFriendScreen({super.key});
+  final String myId;
+  const AddFriendScreen({
+    super.key,
+    required this.myId
+  });
 
   @override
   State<AddFriendScreen> createState() => _AddFriendScreenState();
@@ -207,7 +211,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                         itemBuilder: (context, index) {
                           final user = searchUser[index];
                           final userInfo = user["userInfo"];
-                          final isRequest = user["request"];
+                          final friend = user["friend"];
 
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -218,12 +222,12 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                                 ),
                               ),
                               IconButton(
-                                icon: isRequest
-                                  ? const Icon(
+                                icon: friend != null
+                                  ? const Icon( // 친구 요청 아이콘
                                       Icons.check,
                                       color: Colors.green,
                                     )
-                                  : const Icon(
+                                  : const Icon( // 친구 관계가 없을 때
                                       Icons.add,
                                       color: Colors.black,
                                     ),
@@ -237,9 +241,9 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                                     )
                                   )
                                 ),
-                                onPressed: isRequest
+                                onPressed: friend != null
                                   ? null
-                                  : () {
+                                  : () { // 친구 관계가 없을 때
                                       requestFriend(userInfo["id"]);
                                     },
                               )

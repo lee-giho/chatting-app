@@ -1,5 +1,7 @@
 package com.giho.chatting_app.dto;
 
+import com.giho.chatting_app.domain.Friend;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,5 +11,5 @@ import lombok.Data;
 @Builder
 public class SearchUser {
   private UserInfo userInfo;
-  private boolean isRequest;
+  private Friend friend;
 }

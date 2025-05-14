@@ -1,14 +1,19 @@
 package com.giho.chatting_app.service.kafka;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import com.giho.chatting_app.domain.Friend;
+import com.giho.chatting_app.domain.FriendStatus;
 import com.giho.chatting_app.event.FriendAcceptedEvent;
 import com.giho.chatting_app.event.FriendRequestedEvent;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
+import com.giho.chatting_app.repository.FriendRepository;
 import com.giho.chatting_app.util.JwtProvider;
 
 import lombok.RequiredArgsConstructor;
@@ -23,12 +28,23 @@ public class KafkaProducerService {
   @Autowired
   private JwtProvider jwtProvider;
 
+  @Autowired
+  private FriendRepository friendRepository;
+
   public void sendFriendRequest(String token, String toUserId) {
 
     String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
     String fromUserId = jwtProvider.getUserId(tokenWithoutBearer);
 
     try {
+      Friend friend = Friend.builder()
+        .id(UUID.randomUUID().toString())
+        .userId(fromUserId)
+        .friendId(toUserId)
+        .status(FriendStatus.REQUESTED)
+        .build();
+      friendRepository.save(friend);
+
       kafkaTemplate.send("friend-request", new FriendRequestedEvent(fromUserId, toUserId)).get();
     } catch (Exception e) {
       e.printStackTrace();
@@ -42,6 +58,14 @@ public class KafkaProducerService {
     String fromUserId = jwtProvider.getUserId(tokenWithoutBearer);
 
     try {
+      Friend friend = friendRepository.findByUserIdAndFriendId(
+        toUserId,
+        fromUserId
+      ).orElseThrow(() -> new CustomException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
+
+      friend.setStatus(FriendStatus.ACCEPTED);
+      friendRepository.save(friend);
+
       kafkaTemplate.send("friend-accept", new FriendAcceptedEvent(fromUserId, toUserId)).get();
     } catch (Exception e) {
       e.printStackTrace();

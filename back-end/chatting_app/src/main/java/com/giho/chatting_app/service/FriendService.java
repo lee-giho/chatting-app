@@ -68,4 +68,21 @@ public class FriendService {
     int count = friendRepository.countByFriendIdAndStatus(myId, FriendStatus.REQUESTED);
     return new CountResponse(count);
   }
+
+  public Friend isFriend(String myId, String targetId) {
+    Friend myFriend = friendRepository.findByUserIdAndFriendId(myId, targetId)
+      .orElse(null);
+    Friend targetFriend = friendRepository.findByUserIdAndFriendId(targetId, myId)
+      .orElse(null);
+
+    if (myFriend != null) {
+      return myFriend;
+    }
+
+    if (targetFriend != null) {
+      return targetFriend;
+    }
+
+    return null;
+  }
 }
