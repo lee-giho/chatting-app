@@ -1,4 +1,5 @@
 import 'package:chatting_app/utils/screen_size.dart';
+import 'package:chatting_app/widget/chatButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -87,32 +88,14 @@ class Userprofile extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   if (isFriend)
-                    TextButton(
-                      onPressed: () {
-
+                    ChatButton(
+                      friendId: userId,
+                      onEnterChatRoom: (result) {
+                        Navigator.pop(
+                          context,
+                          result
+                        );
                       },
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        splashFactory: NoSplash.splashFactory,
-                        overlayColor: const Color.fromARGB(0, 146, 144, 144)
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.message,
-                            size: 40,
-                            color: Colors.white,
-                          ),
-                          Text(
-                            "채팅하기",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white
-                            ),
-                          )
-                        ],
-                      )
                     )
                 ],
               )

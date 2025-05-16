@@ -24,7 +24,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
 
     final List<Widget> screens = [
-      FriendListScreen(),
+      FriendListScreen(
+        changeTab: changeTab,
+      ),
       ChatRoomListScreen(),
       MyPageScreen()
     ];

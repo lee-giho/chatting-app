@@ -2,8 +2,8 @@ import 'package:chatting_app/widget/userProfile.dart';
 import 'package:flutter/material.dart';
 
 class ShowModal {
-  void showUserProfile(BuildContext context, Map<String, dynamic> userInfo, bool isMine, bool isFriend) {
-    showModalBottomSheet(
+  Future<String?> showUserProfile(BuildContext context, Map<String, dynamic> userInfo, bool isMine, bool isFriend) {
+    return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

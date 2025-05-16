@@ -19,6 +19,9 @@ public enum ErrorCode {
   FRIEND_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "친구 요청을 찾을 수 없습니다."),
   FRIEND_NOT_FOUND(HttpStatus.NOT_FOUND, "친구를 찾을 수 없습니다."),
 
+  // 채팅방
+  CHATROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
+
   // 인증/인가 관련
   INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 Refresh Token입니다."),
   INVALID_TOKEN_SIGNATURE(HttpStatus.UNAUTHORIZED, "잘못된 비밀키입니다."),

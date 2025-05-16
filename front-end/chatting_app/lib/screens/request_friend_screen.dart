@@ -198,6 +198,7 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
                                 userInfo: userInfo,
                                 isMine: false,
                                 isFriend: false,
+                                onEnterChatRoom:(result) {} // 친구 아닌 상태에서는 채팅 없음
                               ),
                             ),
                             Row( // 수락, 거절 버튼 부분

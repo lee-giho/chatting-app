@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:chatting_app/screens/add_friend_screen.dart';
+import 'package:chatting_app/screens/chat_screen.dart';
 import 'package:chatting_app/screens/request_friend_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/utils/webSocket.dart';
@@ -12,7 +13,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class FriendListScreen extends StatefulWidget {
-  const FriendListScreen({super.key});
+  final void Function(int) changeTab;
+  const FriendListScreen({
+    super.key,
+    required this.changeTab
+  });
 
   @override
   State<FriendListScreen> createState() => _FriendListScreenState();
@@ -232,8 +237,8 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   Icons.person_add,
                   color: Colors.black,
                 ),
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => AddFriendScreen(
@@ -242,6 +247,18 @@ class _FriendListScreenState extends State<FriendListScreen> {
                       )
                     )
                   );
+
+                  if (result != null) {
+                    widget.changeTab(1);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          chatRoomId: result
+                        )
+                      )
+                    );
+                  }
                 },
               )
             ],
@@ -258,6 +275,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
                 userInfo: myInfo,
                 isMine: true,
                 isFriend: false,
+                onEnterChatRoom: (result) {}, // 내 프로필에서는 채팅 없음
               ),
               Container( // 가로줄
                 width: double.infinity,
@@ -367,6 +385,17 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           userInfo: friend,
                           isMine: false,
                           isFriend: true,
+                          onEnterChatRoom: (result) {
+                            widget.changeTab(1);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatScreen(
+                                  chatRoomId: result
+                                )
+                              )
+                            );
+                          }
                         ),
                       );
                     }

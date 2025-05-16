@@ -414,6 +414,12 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                                   userInfo: userInfo,
                                   isMine: false,
                                   isFriend: isFriend,
+                                  onEnterChatRoom: (result) {
+                                    Navigator.pop(
+                                      context,
+                                      result
+                                    );
+                                  }
                                 ),
                               ),
                               buttonWidget!

@@ -4,13 +4,15 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class UserTile extends StatefulWidget {
   final Map<String, dynamic> userInfo;
+  final void Function(String result) onEnterChatRoom;
   final bool isMine;
   final bool isFriend;
   const UserTile({
     super.key,
     required this.userInfo,
     required this.isMine,
-    required this.isFriend
+    required this.isFriend,
+    required this.onEnterChatRoom
   });
 
   @override
@@ -28,14 +30,18 @@ class _UserTileState extends State<UserTile> {
     final String nickName = widget.userInfo["nickName"] ?? "";
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
         print("$nickName 클릭");
-        ShowModal().showUserProfile(
+        final result = await ShowModal().showUserProfile(
           context,
           widget.userInfo,
           widget.isMine,
           widget.isFriend
         );
+
+        if (result != null) {
+          widget.onEnterChatRoom(result);
+        }
       },
       child: Padding(
         padding: const EdgeInsets.all(8.0),
