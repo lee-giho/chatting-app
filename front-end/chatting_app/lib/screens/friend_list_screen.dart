@@ -24,6 +24,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
   // 친구 요청 수
   int requestFriendCount = 0;
+  List<dynamic> friendList = [];
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
 
     getMyInfo();
     getRequestFriendCount();
+    getFriendList();
 
     WebSocket().addShowMessageListener(onShowMessage);
   }
@@ -128,6 +130,43 @@ class _FriendListScreenState extends State<FriendListScreen> {
     }
   }
 
+  Future<void> getFriendList() async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/friend/list");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.get(
+        apiAddress,
+        headers: headers
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print("data: $data");
+        setState(() {
+          friendList = data["friends"];
+        });
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 목록 불러오기 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -176,10 +215,10 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   "nickName": myInfo["nickName"] ?? ""
                 },
               ),
-              Container(
+              Container( // 가로줄
                 width: double.infinity,
                 child: Divider(
-                  color: Colors.black,
+                  color: Colors.grey,
                   thickness: 1,
                 ),
               ),
@@ -201,22 +240,27 @@ class _FriendListScreenState extends State<FriendListScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.white,
-                          
-                          child: Icon(
-                            Icons.group_add,
-                            size: 34,
-                            color: Colors.black,
-                          )
-                        ),
-                        const Text(
-                          "친구요청",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold
-                          ),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 25,
+                              backgroundColor: Colors.white,
+                              
+                              child: Icon(
+                                Icons.group_add,
+                                size: 34,
+                                color: Colors.black,
+                              )
+                            ),
+                            SizedBox(width: 20),
+                            const Text(
+                              "친구요청",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                          ],
                         ),
                         Row(
                           children: [
@@ -233,6 +277,37 @@ class _FriendListScreenState extends State<FriendListScreen> {
                     ),
                   ),
                 ),
+              ),
+              Container( // 가로줄
+                width: double.infinity,
+                child: Divider(
+                  color: Colors.grey,
+                  thickness: 1,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "친구 ${friendList.length.toString()}",
+                  ),
+                ),
+              ),
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverList.builder(
+                    itemCount: friendList.length,
+                    itemBuilder: (context, index) {
+                      final friend = friendList[index];
+                      return UserTile(
+                        userInfo: friend
+                      );
+                    }
+                  )
+                  ],
+                )
               )
             ],
           ),

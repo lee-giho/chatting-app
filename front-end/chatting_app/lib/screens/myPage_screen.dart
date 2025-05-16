@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:chatting_app/screens/login_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -255,6 +256,19 @@ class _MyPageScreenState extends State<MyPageScreen> {
     );
   }
 
+  Future<void> logout() async {
+    // 토큰과 자동 로그인 여부 삭제
+    SecureStorage.deleteTokensAndAutoLogin();
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen()
+      ),
+      (route) => false // 스택에 남는 페이지 없이 전체 삭제
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     print("myInfo: $myInfo");
@@ -371,6 +385,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     )
                   ],
                 ),
+              ),
+              TextButton(
+                onPressed: () {
+                  logout();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white
+                ),
+                child: const Text(
+                  "로그아웃",
+                  style: TextStyle(
+                    color: Colors.black
+                  ),
+                )
               )
             ],
           ),

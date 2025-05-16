@@ -2,6 +2,7 @@ package com.giho.chatting_app.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import com.giho.chatting_app.domain.Friend;
 import com.giho.chatting_app.domain.FriendStatus;
 import com.giho.chatting_app.domain.User;
 import com.giho.chatting_app.dto.CountResponse;
+import com.giho.chatting_app.dto.FriendList;
 import com.giho.chatting_app.dto.ReceivedFriendListResponse;
 import com.giho.chatting_app.dto.ReceivedFriendRequest;
 import com.giho.chatting_app.dto.UserInfo;
@@ -31,6 +33,7 @@ public class FriendService {
   @Autowired
   private UserRepository userRepository;
 
+  // 받은 친구 요청 목록 반환
   public ReceivedFriendListResponse getReceivedFriendRequests(String token) {
 
     String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
@@ -60,6 +63,7 @@ public class FriendService {
     return new ReceivedFriendListResponse(receivedFriendRequests);
   }
   
+  // 받은 친구 요청 수 반환
   public CountResponse getRequestFriendCount(String token) {
     
     String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
@@ -84,5 +88,41 @@ public class FriendService {
     }
 
     return null;
+  }
+
+  // 친구 목록 반환
+  public FriendList getFriendList(String token) {
+
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String myId = jwtProvider.getUserId(tokenWithoutBearer);
+
+    // 내가 먼저 요청을 보낸 친구 목록
+    List<Friend> friendList1 = friendRepository.findAllByUserIdAndStatus(myId, FriendStatus.ACCEPTED);
+
+    // 상대방이 먼저 요청을 보낸 친구 목록
+    List<Friend> friendList2 = friendRepository.findAllByFriendIdAndStatus(myId, FriendStatus.ACCEPTED);
+
+    List<UserInfo> userInfos = Stream.concat(
+      friendList1.stream().map(friend -> {
+        User user = userRepository.findById(friend.getFriendId())
+          .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return UserInfo.builder()
+          .id(user.getId())
+          .nickName(user.getNickName())
+          .profileImage(user.getProfileImage())
+          .build();
+      }),
+      friendList2.stream().map(friend -> {
+        User user = userRepository.findById(friend.getUserId())
+          .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return UserInfo.builder()
+          .id(user.getId())
+          .nickName(user.getNickName())
+          .profileImage(user.getProfileImage())
+          .build();
+      })
+    ).collect(Collectors.toList());
+
+    return new FriendList(userInfos);
   }
 }
