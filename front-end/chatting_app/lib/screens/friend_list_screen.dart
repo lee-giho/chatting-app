@@ -7,6 +7,7 @@ import 'package:chatting_app/utils/webSocket.dart';
 import 'package:chatting_app/widget/userTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -25,6 +26,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
   // 친구 요청 수
   int requestFriendCount = 0;
   List<dynamic> friendList = [];
+
+  // 클릭한 유저
+  Map<String, dynamic> tapUser = {};
 
   @override
   void initState() {
@@ -167,6 +171,47 @@ class _FriendListScreenState extends State<FriendListScreen> {
     }
   }
 
+  Future<void> deleteFriend(String friendId) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/friend?friendId=$friendId");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.delete(
+        apiAddress,
+        headers: headers
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        bool result = data["bool"];
+        print("data: $data");
+        if (result) {
+          getFriendList();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("친구가 삭제되었습니다."))
+          );
+        }
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 삭제하기 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -210,10 +255,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
           child: Column(
             children: [
               UserTile(
-                userInfo: {
-                  "profileImage": myInfo["profileImage"] ?? "default",
-                  "nickName": myInfo["nickName"] ?? ""
-                },
+                userInfo: myInfo
               ),
               Container( // 가로줄
                 width: double.infinity,
@@ -229,6 +271,7 @@ class _FriendListScreenState extends State<FriendListScreen> {
                     MaterialPageRoute(
                       builder: (context) => RequestFriendScreen(
                         getRequestFriendCount: getRequestFriendCount,
+                        getFriendList: getFriendList,
                       )
                     )
                   );
@@ -301,8 +344,26 @@ class _FriendListScreenState extends State<FriendListScreen> {
                     itemCount: friendList.length,
                     itemBuilder: (context, index) {
                       final friend = friendList[index];
-                      return UserTile(
-                        userInfo: friend
+                      return Slidable(
+                        key: ValueKey(friend["id"]),
+                        endActionPane: ActionPane(
+                          motion: const ScrollMotion(),
+                          extentRatio: 0.2,
+                          children: [
+                            SlidableAction(
+                              onPressed: (context) {
+                                deleteFriend(friend["id"]);
+                              },
+                              backgroundColor: Colors.red,
+                              flex: 1,
+                              icon: Icons.delete,
+                              label: "삭제",
+                            )
+                          ]
+                        ),
+                        child: UserTile(
+                          userInfo: friend
+                        ),
                       );
                     }
                   )

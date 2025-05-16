@@ -15,8 +15,9 @@ class UserTile extends StatefulWidget {
 class _UserTileState extends State<UserTile> {
   @override
   Widget build(BuildContext context) {
-    final String profileImage = widget.userInfo["profileImage"];
-    final String nickName = widget.userInfo["nickName"];
+    print("userInfoasdfasdf: ${widget.userInfo}");
+    final String profileImage = widget.userInfo["profileImage"] ?? "default";
+    final String nickName = widget.userInfo["nickName"] ?? "";
 
     return InkWell(
       onTap: () {

@@ -1,6 +1,7 @@
 package com.giho.chatting_app.service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.giho.chatting_app.domain.Friend;
 import com.giho.chatting_app.domain.FriendStatus;
 import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.CountResponse;
 import com.giho.chatting_app.dto.FriendList;
 import com.giho.chatting_app.dto.ReceivedFriendListResponse;
@@ -124,5 +126,24 @@ public class FriendService {
     ).collect(Collectors.toList());
 
     return new FriendList(userInfos);
+  }
+
+  // 친구 삭제
+  public BooleanResponse deleteFriend(String token, String friendId) {
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String myId = jwtProvider.getUserId(tokenWithoutBearer);
+
+    // 내가 요청을 보낸 Friend
+    Optional<Friend> friendOpt = friendRepository.findByUserIdAndFriendIdAndStatus(myId, friendId, FriendStatus.ACCEPTED);
+
+    if (friendOpt.isEmpty()) {
+      // 상대방이 요청을 보낸 Friend
+      friendOpt = friendRepository.findByUserIdAndFriendIdAndStatus(friendId, myId, FriendStatus.ACCEPTED);
+    }
+
+    Friend friend = friendOpt.orElseThrow(() -> new CustomException(ErrorCode.FRIEND_NOT_FOUND));
+    friendRepository.delete(friend);
+
+    return new BooleanResponse(true);
   }
 }

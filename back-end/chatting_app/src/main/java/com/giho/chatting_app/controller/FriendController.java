@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.CountResponse;
 import com.giho.chatting_app.dto.FriendList;
 import com.giho.chatting_app.dto.ReceivedFriendListResponse;
@@ -66,5 +67,12 @@ public class FriendController {
   public ResponseEntity<FriendList> getFriendList(@RequestHeader("Authorization") String token) {
     FriendList friendList = friendService.getFriendList(token);
     return ResponseEntity.ok(friendList);
+  }
+
+  // 친구 삭제 엔드포인트
+  @DeleteMapping
+  public ResponseEntity<BooleanResponse> deleteFriend(@RequestHeader("Authorization") String token, @RequestParam("friendId") String friendId) {
+    BooleanResponse booleanResponse = friendService.deleteFriend(token, friendId);
+    return ResponseEntity.ok(booleanResponse);
   }
 }

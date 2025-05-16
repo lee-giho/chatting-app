@@ -10,9 +10,11 @@ import 'dart:convert';
 
 class RequestFriendScreen extends StatefulWidget {
   final VoidCallback getRequestFriendCount;
+  final VoidCallback getFriendList;
   const RequestFriendScreen({
     super.key,
-    required this.getRequestFriendCount
+    required this.getRequestFriendCount,
+    required this.getFriendList
   });
 
   @override
@@ -99,6 +101,7 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
 
         await getReceivedFriendRequests(); // 친구 요청 리스트 새로고침
         widget.getRequestFriendCount(); // 이전 화면에서 친구 요청 수 새로고침
+        widget.getFriendList(); // 이전 화면에서 친구 리스트 새로고침
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("친구 요청을 수락했습니다."))
