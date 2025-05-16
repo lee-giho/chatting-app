@@ -195,7 +195,9 @@ class _RequestFriendScreenState extends State<RequestFriendScreen> {
                           children: [
                             Expanded(
                               child: UserTile(
-                                userInfo: userInfo
+                                userInfo: userInfo,
+                                isMine: false,
+                                isFriend: false,
                               ),
                             ),
                             Row( // 수락, 거절 버튼 부분

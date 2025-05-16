@@ -303,6 +303,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                           final user = searchUser[index];
                           final userInfo = user["userInfo"];
                           final friend = user["friend"];
+                          bool isFriend = false;
 
                           Widget? buttonWidget;
 
@@ -311,6 +312,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                             final isReceived = widget.myId == friend["friendId"];
 
                             if (friendStatus == "ACCEPTED") { // 친구 상태인 경우
+                              isFriend = true;
                               buttonWidget = IconButton(
                                 icon: Icon(
                                   Icons.favorite,
@@ -409,7 +411,9 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
                             children: [
                               Expanded(
                                 child: UserTile(
-                                  userInfo: userInfo
+                                  userInfo: userInfo,
+                                  isMine: false,
+                                  isFriend: isFriend,
                                 ),
                               ),
                               buttonWidget!

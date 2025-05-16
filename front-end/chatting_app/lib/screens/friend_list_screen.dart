@@ -255,7 +255,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
           child: Column(
             children: [
               UserTile(
-                userInfo: myInfo
+                userInfo: myInfo,
+                isMine: true,
+                isFriend: false,
               ),
               Container( // 가로줄
                 width: double.infinity,
@@ -362,7 +364,9 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           ]
                         ),
                         child: UserTile(
-                          userInfo: friend
+                          userInfo: friend,
+                          isMine: false,
+                          isFriend: true,
                         ),
                       );
                     }
