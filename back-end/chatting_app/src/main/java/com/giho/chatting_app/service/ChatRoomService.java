@@ -6,13 +6,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.giho.chatting_app.domain.ChatRoom;
+import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.dto.ChatRoomAndFriendInfo;
+import com.giho.chatting_app.dto.ChatRoomAndUserInfoList;
 import com.giho.chatting_app.dto.ChatRoomIdResponse;
+import com.giho.chatting_app.dto.UserInfo;
+import com.giho.chatting_app.exception.CustomException;
+import com.giho.chatting_app.exception.ErrorCode;
 import com.giho.chatting_app.repository.ChatRoomRepository;
+import com.giho.chatting_app.repository.UserRepository;
 import com.giho.chatting_app.util.JwtProvider;
 
 @Service
@@ -25,6 +33,9 @@ public class ChatRoomService {
 
   @Autowired
   private ChatRoomRepository chatRoomRepository;
+
+  @Autowired
+  private UserRepository userRepository;
 
   // // 채팅방 생성
   // public ChatRoom createRoom(String name) {
@@ -66,8 +77,50 @@ public class ChatRoomService {
   }
 
   // 모든 채팅방 반환
-  public List<ChatRoom> getAllRooms() {
-    return new ArrayList<>(chatRooms.values());
+  public ChatRoomAndUserInfoList getAllRooms(String token) {
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String myId = jwtProvider.getUserId(tokenWithoutBearer);
+
+    List<ChatRoom> chatRooms = new ArrayList<>();
+
+    // 내가 만든 채팅방이 있는지 확인 후 추가
+    chatRoomRepository.findByCreatorId(myId)
+      .ifPresent(chatRooms::add);
+
+    // 친구가 만든 채팅방이 있는지 확인 후 추가
+    chatRoomRepository.findByVisitorId(myId)
+      .ifPresent(chatRooms::add);
+
+    if (chatRooms.isEmpty()) {
+      return ChatRoomAndUserInfoList.builder()
+        .chatRoomInfos(null)
+        .build();
+    }
+
+    List<ChatRoomAndFriendInfo> chatRoomAndFriendInfos = chatRooms.stream()
+      .map(chatRoom -> {
+        String friendId = chatRoom.getCreatorId().equals(myId)
+          ? chatRoom.getVisitorId()
+          : chatRoom.getCreatorId();
+
+        User user = userRepository.findById(friendId)
+          .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        UserInfo userInfo = UserInfo.builder()
+          .id(user.getId())
+          .nickName(user.getNickName())
+          .profileImage(user.getProfileImage())
+          .build();
+
+        return ChatRoomAndFriendInfo.builder()
+          .chatRoom(chatRoom)
+          .friendInfo(userInfo)
+          .build();
+      }).collect(Collectors.toList());
+
+    return ChatRoomAndUserInfoList.builder()
+      .chatRoomInfos(chatRoomAndFriendInfos)
+      .build();
   }
 
   // 특정 채팅방 조회
