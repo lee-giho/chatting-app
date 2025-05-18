@@ -1,8 +1,11 @@
 import 'dart:developer';
 
+import 'package:chatting_app/screens/chat_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
+import 'package:chatting_app/widget/chatRoomTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -77,9 +80,58 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: const Text(
-            "채팅방 리스트"
+        child: Container( // 전체 화면
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
+          child: Column(
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverList.builder(
+                      itemCount: chatRoomList.length,
+                      itemBuilder: (context, index) {
+                        final chatRoom = chatRoomList[index];
+                        final String chatRoomId = chatRoom["chatRoomInfo"]["id"];
+                        return Slidable(
+                          key: ValueKey(chatRoomId),
+                          endActionPane: ActionPane(
+                            motion: const ScrollMotion(),
+                            extentRatio: 0.25,
+                            children: [
+                              SlidableAction(
+                                onPressed: (context) {
+              
+                                },
+                                backgroundColor: Colors.red,
+                                flex: 1,
+                                icon: Icons.delete,
+                                label: "나가기",
+                              )
+                            ]
+                          ),
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatScreen(
+                                    chatRoomId: chatRoomId
+                                  )
+                                )
+                              );
+                            },
+                            child: ChatRoomTile(
+                              chatRoom: chatRoom
+                            ),
+                          )
+                        );
+                      }
+                    )
+                  ],
+                )
+              ),
+            ],
           ),
         )
       ),

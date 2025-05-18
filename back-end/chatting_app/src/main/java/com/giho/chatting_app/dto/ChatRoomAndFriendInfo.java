@@ -9,6 +9,6 @@ import lombok.Data;
 @AllArgsConstructor
 @Builder
 public class ChatRoomAndFriendInfo {
-  private ChatRoom chatRoom;
+  private ChatRoom chatRoomInfo;
   private UserInfo friendInfo;
 }

@@ -113,7 +113,7 @@ public class ChatRoomService {
           .build();
 
         return ChatRoomAndFriendInfo.builder()
-          .chatRoom(chatRoom)
+          .chatRoomInfo(chatRoom)
           .friendInfo(userInfo)
           .build();
       }).collect(Collectors.toList());
