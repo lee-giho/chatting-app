@@ -12,19 +12,102 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+
+  var messageController = TextEditingController();
+
+  FocusNode messageFocus = FocusNode();
+
+  @override
+  void dispose() {
+    super.dispose();
+
+    messageController.dispose();
+
+    messageFocus.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            widget.chatRoomId,
+            style: TextStyle(
+              fontWeight: FontWeight.bold
+            ),
+          ),
+        ),
+      ),
       body: SafeArea(
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
-          child: Column(
-            children: [
-              Text(
-                widget.chatRoomId
-              )
-            ],
+        child: GestureDetector(
+          onTap: () {
+            messageFocus.unfocus();
+          },
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container( // 메시지 보는 곳
+                    color: Colors.lightBlue,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: messageController,
+                        focusNode: messageFocus,
+                        maxLines: 3,
+                        minLines: 1,
+                        decoration: const InputDecoration(
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(5)
+                            ),
+                            borderSide: BorderSide(
+                              color: Color.fromRGBO(121, 55, 64, 0.612)
+                            )
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(5)
+                            ),
+                            borderSide: BorderSide(
+                              color: Color.fromRGBO(122, 11, 11, 1)
+                            )
+                          )
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    TextButton(
+                      onPressed: () {
+
+                      },
+                      style: TextButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        minimumSize: Size(64, 56),
+                        backgroundColor: Color.fromRGBO(121, 55, 64, 1)
+                      ),
+                      child: const Text(
+                        "전송",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold
+                        ),
+                      )
+                    )
+                  ],
+                )
+              ],
+            ),
           ),
         )
       ),
