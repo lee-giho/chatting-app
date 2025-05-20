@@ -1,3 +1,4 @@
+import 'package:chatting_app/widget/chatMessageBox.dart';
 import 'package:flutter/material.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -53,6 +54,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Container( // 메시지 보는 곳
                     color: Colors.lightBlue,
+                    child: Column(
+                      children: [
+                        ChatMessageBox(
+                          chatMessage: {
+                            "content": "메시지 테스트"
+                          }
+                        )
+                      ],
+                    ),
                   ),
                 ),
                 Row(
