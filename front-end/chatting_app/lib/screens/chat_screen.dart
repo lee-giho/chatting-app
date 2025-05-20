@@ -1,5 +1,6 @@
 import 'package:chatting_app/widget/chatMessageBox.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatRoomId;
@@ -17,6 +18,21 @@ class _ChatScreenState extends State<ChatScreen> {
   var messageController = TextEditingController();
 
   FocusNode messageFocus = FocusNode();
+
+  List<dynamic> chatMessageList = [
+    {
+      "id" : "a",
+      "content" : "1111"
+    },
+    {
+      "id" : "b",
+      "content" : "2222"
+    },
+    {
+      "id" : "b",
+      "content" : "asdfasdfasdfkjl;ahsdl;fa;ldfjl;ajdfl;ajdl;fjasdfhakjsdhfjkahdsfkhakjsdhfjahsdkfjhsdjkfhjkhjkahsdflkjhasldkjfhkljh"
+    }
+  ];
 
   @override
   void dispose() {
@@ -51,18 +67,20 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
             child: Column(
               children: [
-                Expanded(
-                  child: Container( // 메시지 보는 곳
-                    color: Colors.lightBlue,
-                    child: Column(
-                      children: [
-                        ChatMessageBox(
-                          chatMessage: {
-                            "content": "메시지 테스트"
-                          }
-                        )
-                      ],
-                    ),
+                Expanded( // 메시지 보는 곳
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverList.builder(
+                        itemCount: chatMessageList.length,
+                        itemBuilder: (context, index) {
+                          final chatMessage = chatMessageList[index];
+                          final String chatMessageId = chatMessage["id"];
+                          return ChatMessageBox(
+                            chatMessage: chatMessage
+                          );
+                        }
+                      )
+                    ],
                   ),
                 ),
                 Row(
