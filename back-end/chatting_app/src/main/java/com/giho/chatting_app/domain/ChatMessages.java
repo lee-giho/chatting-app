@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Document(collation = "chatMessages")
+@Document(collection = "chatMessages")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

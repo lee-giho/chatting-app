@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.giho.chatting_app.dto.ChatRoomAndUserInfoList;
 import com.giho.chatting_app.dto.ChatRoomIdResponse;
+import com.giho.chatting_app.dto.ParticipatingUsersInfo;
 import com.giho.chatting_app.service.ChatRoomService;
 
 import lombok.AllArgsConstructor;
@@ -34,6 +35,13 @@ public class ChatRoomController {
   public ResponseEntity<ChatRoomAndUserInfoList> getRoomList(@RequestHeader("Authorization") String token) {
     ChatRoomAndUserInfoList chatRoomAndUserInfoList = chatRoomService.getAllRooms(token);
     return ResponseEntity.ok(chatRoomAndUserInfoList);
+  }
+
+  // 채팅방에 있는 사용자 정보 반환 엔드포인트
+  @GetMapping("/usersInfo")
+  public ResponseEntity<ParticipatingUsersInfo> getParticipatingUsersInfo(@RequestHeader("Authorization") String token, @RequestParam("chatRoomId") String chatRoomId) {
+    ParticipatingUsersInfo participatingUsersInfo = chatRoomService.getParticipatingUsersInfo(token, chatRoomId);
+    return ResponseEntity.ok(participatingUsersInfo);
   }
 
   // // 특정 채팅방 반환

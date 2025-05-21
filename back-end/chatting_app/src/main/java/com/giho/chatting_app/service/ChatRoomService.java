@@ -16,6 +16,7 @@ import com.giho.chatting_app.domain.User;
 import com.giho.chatting_app.dto.ChatRoomAndFriendInfo;
 import com.giho.chatting_app.dto.ChatRoomAndUserInfoList;
 import com.giho.chatting_app.dto.ChatRoomIdResponse;
+import com.giho.chatting_app.dto.ParticipatingUsersInfo;
 import com.giho.chatting_app.dto.UserInfo;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
@@ -36,6 +37,9 @@ public class ChatRoomService {
 
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private UserService userService;
 
   // // 채팅방 생성
   // public ChatRoom createRoom(String name) {
@@ -126,5 +130,28 @@ public class ChatRoomService {
   // 특정 채팅방 조회
   public ChatRoom findRoomById(String roomId) {
     return chatRooms.get(roomId);
+  }
+
+  // 채팅방에 있는 사용자 정보 조회
+  public ParticipatingUsersInfo getParticipatingUsersInfo(String token, String chatRoomId) {
+    
+    ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+      .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String myId = jwtProvider.getUserId(tokenWithoutBearer);
+      
+    String friendId = chatRoom.getCreatorId().equals(myId)
+      ? chatRoom.getVisitorId()
+      : chatRoom.getCreatorId();
+
+    UserInfo myInfo = userService.userToUserInfo(myId);
+    UserInfo friendInfo = userService.userToUserInfo(friendId);
+
+    return ParticipatingUsersInfo.builder()
+      .myInfo(myInfo)
+      .friendInfo(friendInfo)
+      .creatorId(chatRoom.getCreatorId())
+      .build();
   }
 }

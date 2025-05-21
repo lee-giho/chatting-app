@@ -18,7 +18,7 @@ import com.giho.chatting_app.event.FriendDeclinedEvent;
 import com.giho.chatting_app.event.FriendRequestedEvent;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
-import com.giho.chatting_app.repository.ChatMessageRepository;
+import com.giho.chatting_app.repository.ChatMessagesRepository;
 import com.giho.chatting_app.repository.FriendRepository;
 import com.giho.chatting_app.util.JwtProvider;
 
@@ -38,7 +38,7 @@ public class KafkaProducerService {
   private FriendRepository friendRepository;
 
   @Autowired
-  private ChatMessageRepository chatMessageRepository;
+  private ChatMessagesRepository chatMessageRepository;
 
   public void sendFriendRequest(String token, String toUserId) {
 
@@ -120,8 +120,8 @@ public class KafkaProducerService {
       ChatMessageEvent event = new ChatMessageEvent(
         chatMessage.getId(),
         chatMessage.getRoomId(),
-        chatMessage.getContent(),
         chatMessage.getSender(),
+        chatMessage.getContent(),
         chatMessage.getSentAt()
       );
       

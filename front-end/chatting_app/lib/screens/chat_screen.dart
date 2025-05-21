@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/widget/chatMessageBox.dart';
 import 'package:flutter/material.dart';
@@ -22,16 +24,22 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
 
   var messageController = TextEditingController();
-
   FocusNode messageFocus = FocusNode();
 
-  Map<String, dynamic> chatMessageList = {};
+  List<dynamic> chatMessageList = [];
+  Map<String, dynamic> myInfo = {};
+  Map<String, dynamic> friendInfo = {};
+  String creatorId = "";
+
+  late StompClient stompClient;
 
   @override
   void initState() {
     super.initState();
 
     chatConnect();
+    getUsersInfo();
+    getChatMessageList();
   }
 
   @override
@@ -42,8 +50,6 @@ class _ChatScreenState extends State<ChatScreen> {
     messageFocus.dispose();
     stompClient.deactivate();
   }
-
-  late StompClient stompClient;
 
   void chatConnect() {
     final wsAddress = dotenv.get("WS_ADDRESS");
@@ -56,8 +62,14 @@ class _ChatScreenState extends State<ChatScreen> {
           stompClient.subscribe(
             destination: "/topic/chat-room/${widget.chatRoomId}",
             callback: (frame) {
-              final message = frame.body ?? "";
-              print("결과: $message");
+              final body = frame.body;
+              if (body != null) {
+                final decodedData = jsonDecode(body);
+                print("응답 데이터: $decodedData");
+                setState(() {
+                  chatMessageList.add(decodedData);
+                });
+              }
             }
           );
         }
@@ -65,6 +77,86 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     stompClient.activate();
+  }
+
+  Future<void> getUsersInfo() async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/chatRoom/usersInfo?chatRoomId=${widget.chatRoomId}");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.get(
+        apiAddress,
+        headers: headers
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        setState(() {
+          myInfo = data["myInfo"];
+          friendInfo = data["friendInfo"];
+          creatorId = data["creatorId"];
+        });
+
+        print("myInfo: $myInfo");
+        print("friendInfo: $friendInfo");
+        print("creatorId: $creatorId");
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("사용자 정보 불러오기 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
+  Future<void> getChatMessageList() async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/chatMessage/all?chatRoomId=${widget.chatRoomId}");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.get(
+        apiAddress,
+        headers: headers
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          chatMessageList = data["chatMessageList"];
+        });
+        print("chatMessage: $chatMessageList");
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("메세지 목록 불러오기 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
   }
 
   Future<void> sendMessage(String message) async {
@@ -117,7 +209,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         itemCount: chatMessageList.length,
                         itemBuilder: (context, index) {
                           final chatMessage = chatMessageList[index];
-                          final String chatMessageId = chatMessage["id"];
+                          print("chatMessage111: $chatMessage");
                           return ChatMessageBox(
                             chatMessage: chatMessage
                           );

@@ -164,4 +164,17 @@ public class UserService {
 
     return new SearchUserList(searchUsers);
   }
+
+  public UserInfo userToUserInfo(String id) {
+    User user = userRepository.findById(id)
+      .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    UserInfo userInfo = UserInfo.builder()
+      .id(user.getId())
+      .nickName(user.getNickName())
+      .profileImage(user.getProfileImage())
+      .build();
+    
+    return userInfo;
+  }
 }
