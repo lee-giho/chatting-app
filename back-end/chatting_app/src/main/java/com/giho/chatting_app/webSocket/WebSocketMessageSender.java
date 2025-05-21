@@ -3,6 +3,8 @@ package com.giho.chatting_app.webSocket;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
+import com.giho.chatting_app.event.ChatMessageEvent;
+
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -29,6 +31,13 @@ public class WebSocketMessageSender {
     messagingTemplate.convertAndSend(
       "/topic/friend-decline/" + targetUserId,
       fromUserId + "님이 친구 요청을 거절했습니다."
+    );
+  }
+
+  public void sendMessageNotification(ChatMessageEvent event) {
+    messagingTemplate.convertAndSend(
+      "/topic/chat-room/" + event.roomId(),
+      event
     );
   }
 }

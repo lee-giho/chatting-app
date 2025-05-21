@@ -1,5 +1,6 @@
 package com.giho.chatting_app.service.kafka;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,13 +8,17 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import com.giho.chatting_app.domain.ChatMessages;
 import com.giho.chatting_app.domain.Friend;
 import com.giho.chatting_app.domain.FriendStatus;
+import com.giho.chatting_app.dto.ChatMessage;
+import com.giho.chatting_app.event.ChatMessageEvent;
 import com.giho.chatting_app.event.FriendAcceptedEvent;
 import com.giho.chatting_app.event.FriendDeclinedEvent;
 import com.giho.chatting_app.event.FriendRequestedEvent;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
+import com.giho.chatting_app.repository.ChatMessageRepository;
 import com.giho.chatting_app.repository.FriendRepository;
 import com.giho.chatting_app.util.JwtProvider;
 
@@ -31,6 +36,9 @@ public class KafkaProducerService {
 
   @Autowired
   private FriendRepository friendRepository;
+
+  @Autowired
+  private ChatMessageRepository chatMessageRepository;
 
   public void sendFriendRequest(String token, String toUserId) {
 
@@ -88,6 +96,36 @@ public class KafkaProducerService {
       friendRepository.delete(friend);
 
       kafkaTemplate.send("friend-decline", new FriendDeclinedEvent(fromUserId, toUserId)).get();
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  public void sendMessage(String token, ChatMessage message) {
+
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String senderId = jwtProvider.getUserId(tokenWithoutBearer);
+
+    try {
+      ChatMessages chatMessage = ChatMessages.builder()
+        .roomId(message.getRoomId())
+        .sender(senderId)
+        .content(message.getContent())
+        .sentAt(LocalDateTime.now())
+        .build();
+      
+      chatMessageRepository.save(chatMessage);
+
+      ChatMessageEvent event = new ChatMessageEvent(
+        chatMessage.getId(),
+        chatMessage.getRoomId(),
+        chatMessage.getContent(),
+        chatMessage.getSender(),
+        chatMessage.getSentAt()
+      );
+      
+      kafkaTemplate.send("chat-room", event);
     } catch (Exception e) {
       e.printStackTrace();
       throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);

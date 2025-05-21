@@ -3,6 +3,7 @@ package com.giho.chatting_app.service.kafka;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import com.giho.chatting_app.event.ChatMessageEvent;
 import com.giho.chatting_app.event.FriendAcceptedEvent;
 import com.giho.chatting_app.event.FriendDeclinedEvent;
 import com.giho.chatting_app.event.FriendRequestedEvent;
@@ -40,7 +41,7 @@ public class KafkaConsumerService {
     messageSender.sendFriendAcceptNotification(event.targetId(), event.requesterId());
   }
 
-  // 친구 거절 이벹느 처리
+  // 친구 거절 이벤트 처리
   @KafkaListener(
     topics = "friend-decline",
     groupId = "friend-service",
@@ -50,5 +51,16 @@ public class KafkaConsumerService {
     
     // 친구 거절 수신자에게 WebSocket 알림 전송
     messageSender.sendFriendDeclineNotification(event.targetId(), event.requesterId());
+  }
+
+  // 메세지 전송 이벤트 처리
+  @KafkaListener(
+    topics = "chat-room",
+    groupId = "chat-service",
+    containerFactory = "objectKafkaListenerFactory"
+  )
+  public void handleMessageSend(ChatMessageEvent event) {
+    
+    messageSender.sendMessageNotification(event);
   }
 }

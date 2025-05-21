@@ -1,6 +1,12 @@
+import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/widget/chatMessageBox.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:stomp_dart_client/stomp_dart_client.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatRoomId;
@@ -19,28 +25,65 @@ class _ChatScreenState extends State<ChatScreen> {
 
   FocusNode messageFocus = FocusNode();
 
-  List<dynamic> chatMessageList = [
-    {
-      "id" : "a",
-      "content" : "1111"
-    },
-    {
-      "id" : "b",
-      "content" : "2222"
-    },
-    {
-      "id" : "b",
-      "content" : "asdfasdfasdfkjl;ahsdl;fa;ldfjl;ajdfl;ajdl;fjasdfhakjsdhfjkahdsfkhakjsdhfjahsdkfjhsdjkfhjkhjkahsdflkjhasldkjfhkljh"
-    }
-  ];
+  Map<String, dynamic> chatMessageList = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    chatConnect();
+  }
 
   @override
   void dispose() {
     super.dispose();
 
     messageController.dispose();
-
     messageFocus.dispose();
+    stompClient.deactivate();
+  }
+
+  late StompClient stompClient;
+
+  void chatConnect() {
+    final wsAddress = dotenv.get("WS_ADDRESS");
+
+    stompClient = StompClient(
+      config: StompConfig(
+        url: "$wsAddress/ws-chat",
+        onConnect: (StompFrame frame) {
+          print("연결 성공");
+          stompClient.subscribe(
+            destination: "/topic/chat-room/${widget.chatRoomId}",
+            callback: (frame) {
+              final message = frame.body ?? "";
+              print("결과: $message");
+            }
+          );
+        }
+      )
+    );
+
+    stompClient.activate();
+  }
+
+  Future<void> sendMessage(String message) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    stompClient.send(
+      destination: "/app/chat.send",
+      body: json.encode({
+        "content": message,
+        "roomId": widget.chatRoomId
+      }),
+      headers: {
+        'Authorization': 'Bearer $accessToken'
+      }
+    );
+    
+    setState(() {
+      messageController.clear();
+    });
   }
 
   @override
@@ -114,7 +157,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     SizedBox(width: 10),
                     TextButton(
                       onPressed: () {
-
+                        sendMessage(messageController.text);
                       },
                       style: TextButton.styleFrom(
                         shape: RoundedRectangleBorder(
