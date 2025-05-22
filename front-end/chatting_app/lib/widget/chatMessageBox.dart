@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 
 class ChatMessageBox extends StatefulWidget {
   final Map<String, dynamic> chatMessage;
+  final bool isMine;
   const ChatMessageBox({
     super.key,
-    required this.chatMessage
+    required this.chatMessage,
+    required this.isMine
   });
 
   @override
@@ -16,7 +18,9 @@ class _ChatMessageBoxState extends State<ChatMessageBox> {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: widget.isMine
+        ? Alignment.centerRight
+        : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: ScreenSize().width * 0.5
@@ -25,7 +29,9 @@ class _ChatMessageBoxState extends State<ChatMessageBox> {
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.amber,
+            color: widget.isMine
+              ? const Color.fromARGB(255, 176, 255, 179)
+              : const Color.fromARGB(255, 255, 231, 159),
             border: Border.all(
               width: 1
             ),

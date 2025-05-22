@@ -4,7 +4,6 @@ import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/widget/chatMessageBox.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -24,6 +23,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
 
   var messageController = TextEditingController();
+  final ScrollController scrollController = ScrollController();
   FocusNode messageFocus = FocusNode();
 
   List<dynamic> chatMessageList = [];
@@ -40,6 +40,21 @@ class _ChatScreenState extends State<ChatScreen> {
     chatConnect();
     getUsersInfo();
     getChatMessageList();
+
+    // messageFocus 발생했을 때 아래로 스크롤
+    messageFocus.addListener(() {
+      if (messageFocus.hasFocus) {
+        Future.delayed(Duration(milliseconds: 500), () {
+          if (scrollController.hasClients) {
+            scrollController.animateTo(
+              scrollController.position.maxScrollExtent,
+              duration: Duration(microseconds: 300),
+              curve: Curves.easeOut
+            );
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -68,6 +83,17 @@ class _ChatScreenState extends State<ChatScreen> {
                 print("응답 데이터: $decodedData");
                 setState(() {
                   chatMessageList.add(decodedData);
+                });
+
+                // 프레임 렌더링 후 스크롤 아래로 이동
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (scrollController.hasClients) {
+                    scrollController.animateTo(
+                      scrollController.position.maxScrollExtent,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeOut
+                    );
+                  }
                 });
               }
             }
@@ -102,10 +128,6 @@ class _ChatScreenState extends State<ChatScreen> {
           friendInfo = data["friendInfo"];
           creatorId = data["creatorId"];
         });
-
-        print("myInfo: $myInfo");
-        print("friendInfo: $friendInfo");
-        print("creatorId: $creatorId");
       } else {
         log(response.body);
 
@@ -142,7 +164,15 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           chatMessageList = data["chatMessageList"];
         });
-        print("chatMessage: $chatMessageList");
+
+        // 프레임 렌더링 후 스크롤 아래로 이동
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (scrollController.hasClients) {
+            scrollController.jumpTo(
+              scrollController.position.maxScrollExtent
+            );
+          }
+        });
       } else {
         log(response.body);
 
@@ -202,21 +232,34 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
             child: Column(
               children: [
-                Expanded( // 메시지 보는 곳
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverList.builder(
-                        itemCount: chatMessageList.length,
-                        itemBuilder: (context, index) {
-                          final chatMessage = chatMessageList[index];
-                          print("chatMessage111: $chatMessage");
-                          return ChatMessageBox(
-                            chatMessage: chatMessage
-                          );
-                        }
-                      )
-                    ],
-                  ),
+                // Expanded( // 메시지 보는 곳
+                //   child: CustomScrollView(
+                //     slivers: [
+                //       SliverList.builder(
+                //         itemCount: chatMessageList.length,
+                //         itemBuilder: (context, index) {
+                //           final chatMessage = chatMessageList[index];
+                //           return ChatMessageBox(
+                //             chatMessage: chatMessage,
+                //             isMine: chatMessage["sender"] == myInfo["id"],
+                //           );
+                //         }
+                //       )
+                //     ],
+                //   ),
+                // ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: chatMessageList.length,
+                    itemBuilder: (context, index) {
+                      final chatMessage = chatMessageList[index];
+                      return ChatMessageBox(
+                        chatMessage: chatMessage,
+                        isMine: chatMessage["sender"] == myInfo["id"]
+                      );
+                    }
+                  )
                 ),
                 Row(
                   children: [
