@@ -45,9 +45,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() {
+        if (data["chatRoomInfos"] != null) {
+          setState(() {
           chatRoomList = data["chatRoomInfos"];
         });
+        }
         print("chatRoomList: $chatRoomList");
       } else {
         log(response.body);

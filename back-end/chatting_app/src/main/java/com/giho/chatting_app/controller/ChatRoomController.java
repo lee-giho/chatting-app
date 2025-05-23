@@ -34,6 +34,7 @@ public class ChatRoomController {
   @GetMapping
   public ResponseEntity<ChatRoomAndUserInfoList> getRoomList(@RequestHeader("Authorization") String token) {
     ChatRoomAndUserInfoList chatRoomAndUserInfoList = chatRoomService.getAllRooms(token);
+    System.out.println(chatRoomAndUserInfoList);
     return ResponseEntity.ok(chatRoomAndUserInfoList);
   }
 

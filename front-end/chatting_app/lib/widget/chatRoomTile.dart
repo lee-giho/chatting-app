@@ -17,6 +17,7 @@ class _ChatRoomTileState extends State<ChatRoomTile> {
   Widget build(BuildContext context) {
     final Map<String, dynamic> chatRoomInfo = widget.chatRoom["chatRoomInfo"];
     final Map<String, dynamic> friendInfo = widget.chatRoom["friendInfo"];
+    final Map<String, dynamic> lastMessage = widget.chatRoom["lastMessage"];
 
     final String profileImage = friendInfo["profileImage"] ?? "default";
     final String nickName = friendInfo["nickName"] ?? "";
@@ -54,7 +55,7 @@ class _ChatRoomTileState extends State<ChatRoomTile> {
                   )
                 ),
                 Text(
-                  "나중에 마지막 채팅 내용 보이게 수정 나중에 마지막 채팅 내용 보이게 수정",
+                  lastMessage["content"],
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1
                 )

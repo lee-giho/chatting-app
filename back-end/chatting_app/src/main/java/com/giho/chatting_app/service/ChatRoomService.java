@@ -1,6 +1,9 @@
 package com.giho.chatting_app.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +14,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.giho.chatting_app.domain.ChatMessages;
 import com.giho.chatting_app.domain.ChatRoom;
 import com.giho.chatting_app.domain.User;
 import com.giho.chatting_app.dto.ChatRoomAndFriendInfo;
@@ -20,6 +24,7 @@ import com.giho.chatting_app.dto.ParticipatingUsersInfo;
 import com.giho.chatting_app.dto.UserInfo;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
+import com.giho.chatting_app.repository.ChatMessagesRepository;
 import com.giho.chatting_app.repository.ChatRoomRepository;
 import com.giho.chatting_app.repository.UserRepository;
 import com.giho.chatting_app.util.JwtProvider;
@@ -40,6 +45,9 @@ public class ChatRoomService {
 
   @Autowired
   private UserService userService;
+
+  @Autowired
+  private ChatMessagesRepository chatMessagesRepository;
 
   // // 채팅방 생성
   // public ChatRoom createRoom(String name) {
@@ -85,21 +93,15 @@ public class ChatRoomService {
     String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
     String myId = jwtProvider.getUserId(tokenWithoutBearer);
 
-    List<ChatRoom> chatRooms = new ArrayList<>();
-
-    // 내가 만든 채팅방이 있는지 확인 후 추가
-    chatRoomRepository.findByCreatorId(myId)
-      .ifPresent(chatRooms::add);
-
-    // 친구가 만든 채팅방이 있는지 확인 후 추가
-    chatRoomRepository.findByVisitorId(myId)
-      .ifPresent(chatRooms::add);
+    List<ChatRoom> chatRooms = chatRoomRepository.findByCreatorIdOrVisitorIdOrderByCreatedAtDesc(myId, myId);
 
     if (chatRooms.isEmpty()) {
       return ChatRoomAndUserInfoList.builder()
-        .chatRoomInfos(null)
+        .chatRoomInfos(Collections.emptyList())
         .build();
     }
+
+    System.out.println("chatRoom: " + chatRooms);
 
     List<ChatRoomAndFriendInfo> chatRoomAndFriendInfos = chatRooms.stream()
       .map(chatRoom -> {
@@ -116,11 +118,22 @@ public class ChatRoomService {
           .profileImage(user.getProfileImage())
           .build();
 
+        ChatMessages lastMessage = chatMessagesRepository.findTop1ByRoomIdOrderBySentAtDesc(chatRoom.getId());
+
         return ChatRoomAndFriendInfo.builder()
           .chatRoomInfo(chatRoom)
           .friendInfo(userInfo)
+          .lastMessage(lastMessage)
           .build();
-      }).collect(Collectors.toList());
+      })
+      .sorted(Comparator.comparing(
+        (ChatRoomAndFriendInfo info) -> Optional.ofNullable(info.getLastMessage())
+          .map(ChatMessages::getSentAt)
+          .orElse(LocalDateTime.MIN)
+      ).reversed())
+      .collect(Collectors.toList());
+
+    System.out.println(chatRoomAndFriendInfos);      
 
     return ChatRoomAndUserInfoList.builder()
       .chatRoomInfos(chatRoomAndFriendInfos)

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.giho.chatting_app.domain.ChatMessages;
 import com.giho.chatting_app.dto.ChatMessage;
 import com.giho.chatting_app.dto.ChatMessageList;
 import com.giho.chatting_app.service.ChatMessagesService;
@@ -36,7 +37,12 @@ public class ChatMessagesController {
   @GetMapping("/all")
   public ResponseEntity<ChatMessageList> getChatMessageList(@RequestHeader("Authorization") String token, @RequestParam("chatRoomId") String chatRoomId) {
     ChatMessageList chatMessageList = chatMessagesService.getChatMessageList(chatRoomId);
-    System.out.println("chatMessageList: " + chatMessageList);
     return ResponseEntity.ok(chatMessageList);
+  }
+
+  @GetMapping("/last")
+  public ResponseEntity<ChatMessages> getLastChatMessage(@RequestHeader("Authorization") String token, @RequestParam("chatRoomId") String chatRoomId) {
+    ChatMessages chatMessages = chatMessagesService.getLastChatMessages(chatRoomId);
+    return ResponseEntity.ok(chatMessages);
   }
 }

@@ -17,9 +17,13 @@ public class ChatMessagesService {
 
   public ChatMessageList getChatMessageList(String chatRoomId) {
     List<ChatMessages> chatMessageList = chatMessageRepository.findByRoomIdOrderBySentAtAsc(chatRoomId);
-    System.out.println("chatMessageList: " + chatMessageList);
     return ChatMessageList.builder()
       .chatMessageList(chatMessageList)
       .build();
+  }
+
+  public ChatMessages getLastChatMessages(String chatRoomId) {
+    ChatMessages chatMessages = chatMessageRepository.findTop1ByRoomIdOrderBySentAtDesc(chatRoomId);
+    return chatMessages;
   }
 }
