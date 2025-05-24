@@ -1,7 +1,6 @@
 package com.giho.chatting_app.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -17,6 +16,7 @@ import org.springframework.stereotype.Service;
 import com.giho.chatting_app.domain.ChatMessages;
 import com.giho.chatting_app.domain.ChatRoom;
 import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.ChatRoomAndFriendInfo;
 import com.giho.chatting_app.dto.ChatRoomAndUserInfoList;
 import com.giho.chatting_app.dto.ChatRoomIdResponse;
@@ -48,6 +48,9 @@ public class ChatRoomService {
 
   @Autowired
   private ChatMessagesRepository chatMessagesRepository;
+
+  @Autowired
+  private ChatMessagesService chatMessagesService;
 
   // // 채팅방 생성
   // public ChatRoom createRoom(String name) {
@@ -166,5 +169,18 @@ public class ChatRoomService {
       .friendInfo(friendInfo)
       .creatorId(chatRoom.getCreatorId())
       .build();
+  }
+
+  public BooleanResponse deleteChatRoom(String chatRoomId) {
+
+    ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+      .orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+
+    // 채팅방 메세지 삭제
+    BooleanResponse isMessagesDelete = chatMessagesService.deleteChatMessages(chatRoomId);
+
+    chatRoomRepository.delete(chatRoom);
+    
+    return new BooleanResponse(true);
   }
 }
