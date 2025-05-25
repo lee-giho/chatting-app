@@ -8,6 +8,8 @@ import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.giho.chatting_app.domain.ChatMessages;
+import com.giho.chatting_app.domain.ChatRoom;
 import com.giho.chatting_app.domain.Friend;
 import com.giho.chatting_app.domain.FriendStatus;
 import com.giho.chatting_app.domain.User;
@@ -19,6 +21,8 @@ import com.giho.chatting_app.dto.ReceivedFriendRequest;
 import com.giho.chatting_app.dto.UserInfo;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
+import com.giho.chatting_app.repository.ChatMessagesRepository;
+import com.giho.chatting_app.repository.ChatRoomRepository;
 import com.giho.chatting_app.repository.FriendRepository;
 import com.giho.chatting_app.repository.UserRepository;
 import com.giho.chatting_app.util.JwtProvider;
@@ -34,6 +38,12 @@ public class FriendService {
   
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private ChatRoomRepository chatRoomRepository;
+
+  @Autowired
+  private ChatMessagesRepository chatMessagesRepository;
 
   // 받은 친구 요청 목록 반환
   public ReceivedFriendListResponse getReceivedFriendRequests(String token) {
@@ -135,13 +145,28 @@ public class FriendService {
 
     // 내가 요청을 보낸 Friend
     Optional<Friend> friendOpt = friendRepository.findByUserIdAndFriendIdAndStatus(myId, friendId, FriendStatus.ACCEPTED);
-
     if (friendOpt.isEmpty()) {
       // 상대방이 요청을 보낸 Friend
       friendOpt = friendRepository.findByUserIdAndFriendIdAndStatus(friendId, myId, FriendStatus.ACCEPTED);
     }
-
     Friend friend = friendOpt.orElseThrow(() -> new CustomException(ErrorCode.FRIEND_NOT_FOUND));
+
+    // 내가 만든 ChatRoom
+    Optional<ChatRoom> chatRoomOpt = chatRoomRepository.findByCreatorIdAndVisitorId(myId, friendId);
+    if (chatRoomOpt.isEmpty()) {
+      // 상대방이 만든 ChatRoom
+      chatRoomOpt = chatRoomRepository.findByCreatorIdAndVisitorId(friendId, myId);
+    }
+    ChatRoom chatRoom = chatRoomOpt.orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
+    
+    // 채팅방에 있는 메세지 삭제
+    List<ChatMessages> chatMessages = chatMessagesRepository.findByRoomId(chatRoom.getId());
+    chatMessagesRepository.deleteAll(chatMessages);
+
+    // 채팅방 삭제
+    chatRoomRepository.delete(chatRoom);
+
+    // 친구 삭제
     friendRepository.delete(friend);
 
     return new BooleanResponse(true);
