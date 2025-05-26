@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:chatting_app/screens/video_call_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/widget/chatMessageBox.dart';
 import 'package:flutter/material.dart';
@@ -248,6 +249,33 @@ class _ChatScreenState extends State<ChatScreen> {
                 //     ],
                 //   ),
                 // ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VideoCallScreen(
+                          roomId: widget.chatRoomId
+                        )
+                      )
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    minimumSize: Size(64, 56),
+                    backgroundColor: Color.fromRGBO(121, 55, 64, 1)
+                  ),
+                  child: const Text(
+                    "영상통화",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold
+                    ),
+                  )
+                ),
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
