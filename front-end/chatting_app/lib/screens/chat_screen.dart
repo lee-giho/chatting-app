@@ -254,9 +254,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => VideoCallScreen(
-                          roomId: widget.chatRoomId
-                        )
+                        builder: (context) => VideoCallScreen()
                       )
                     );
                   },

@@ -1,268 +1,367 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
+import 'package:uuid/uuid.dart';
 
 class VideoCallScreen extends StatefulWidget {
-  final String roomId;
-
-  const VideoCallScreen({
-    super.key,
-    required this.roomId,
-  });
+  const VideoCallScreen({super.key});
 
   @override
   State<VideoCallScreen> createState() => _VideoCallScreenState();
 }
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
-  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
-  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
-  MediaStream? _localStream;
-  RTCPeerConnection? _peerConnection;
-  late StompClient _stompClient;
+  late StompClient stompClient;
 
-  final List<RTCIceCandidate> _pendingCandidates = [];
-  bool _remoteDescriptionSet = false;
+  final config = {
+    'iceServers': [
+      {
+        'url': "stun:stun.l.google.com:19302"
+      }
+    ],
+    'sdpSemantics': 'unified-plan'
+  };
 
-  bool get isInitiator => widget.roomId.codeUnitAt(0) % 2 == 0;
+  final sdpConstraints = {
+    'mandatory': {
+      'OfferToReceiveAudio': true,
+      'OfferToReceiveVideo': true
+    },
+    'optional': []
+  };
+
+  String socketUrlSockJS = "${dotenv.env["API_ADDRESS"]}/signaling";
+
+  final String _myKey = const Uuid().v4();
+  String message = "";
+  String _roomId = "";
+  List<String> otherKeyList = [];
+  Map<String, RTCPeerConnection> pcListMap = {};
+  final _localRenderer = RTCVideoRenderer();
+  final _remoteRenderer = RTCVideoRenderer();
+  late MediaStream localStream;
+
+  void onConnect(StompClient stompClient, StompFrame StompFrame) {
+    stompClient.subscribe(
+      destination: '/topic/peer/iceCandidate/$_myKey/$_roomId',
+      callback: (frame) {
+        if (frame.body != null) {
+          print("Received iceCandidate");
+
+          try {
+            Map<String, dynamic> result = jsonDecode(frame.body!);
+            String key = result['key'];
+            Map<String, dynamic> body = result['body'];
+            String candidate = body['candidate'];
+            String sdpMid = body['sdpMid'];
+            int sdpMLineIndex = body['sdpMLineIndex'];
+            if (key == _myKey) return;
+            // 해당 키로부터 받은 ice 등록
+            RTCPeerConnection? pc = pcListMap[key];
+            if (pc != null) {
+              print("onIceCandidate: $key");
+              print("onIceCandiate: $candidate, $sdpMid, $sdpMLineIndex");
+
+              RTCIceCandidate candidates = RTCIceCandidate(
+                candidate,
+                sdpMid,
+                sdpMLineIndex
+              );
+
+              pc.addCandidate(candidates);
+            }
+          } catch (e) {
+            print("/topic/peer/iceCandidate: $e");
+          }
+        }
+      }
+    );
+
+    stompClient.subscribe(
+      destination: 'topic/peer/offer/$_myKey/$_roomId',
+      callback: (frame) async {
+        if (frame.body != null) {
+          try {
+            Map<String, dynamic> result = jsonDecode(frame.body!);
+            String key = result['key'];
+            print("Received offer from: $key");
+            Map<String, dynamic> body = result['body'];
+            String sdp = body['sdp'].replaceAll('setup:actpass', 'setup:active');
+            String type = body['type'];
+            print("Set offer: $key");
+            // 해당 키와 나와 peerConnection 등록
+            // offer를 받는 경우는 상대방이 peerConnection을 등록해서 보냈기 때문
+            pcListMap[key] = await createPeer(key);
+            // 해당 키와 나와 연결된 peerConnection에 전달 받은 오퍼 등록
+            await pcListMap[key]!.setRemoteDescription(RTCSessionDescription(sdp, type));
+            pcListMap[key]!.onSignalingState = (state) {
+              if (state == RTCSignalingState.RTCSignalingStateHaveRemoteOffer) {
+                // 해당 키로부터 받은 오퍼를 등록한 후 answer 생성, 등록 후 전송
+                sendAnswer(pcListMap[key]!, key);
+              }
+            };
+          } catch (e) {
+            print("/topic/peer/offer: $e");
+          }
+        }
+      }
+    );
+
+    stompClient.subscribe(
+      destination: '/topic/peer/answer/$_myKey/$_roomId',
+      callback: (frame) {
+        if (frame.body != null) {
+          try {
+            Map<String, dynamic> result = jsonDecode(frame.body!);
+            String key = result['key'];
+            Map<String, dynamic> body = result['body'];
+            String sdp = body['sdp'];
+            String type = body['type'];
+            print("Received answer: $result");
+            // 해당 키와 peerConnection을 만든 후 보낸 오퍼에 대한 answer 등록
+            RTCPeerConnection? pc = pcListMap[key];
+            if (pc != null) {
+              pc.setRemoteDescription(RTCSessionDescription(sdp, type));
+            }
+          } catch (e) {
+            print("/topic/peer/answer: $e");
+          }
+        }
+      }
+    );
+
+    stompClient.subscribe(
+      destination: '/topic/call/key',
+      callback: (frame) {
+        stompClient.send(
+          destination: '/app/send/key',
+          headers: {},
+          body: '"$_myKey"'
+        );
+      }
+    );
+
+    stompClient.subscribe(
+      destination: '/topic/send/key',
+      callback: (frame) async {
+        if (frame.body != null) {
+          String key = frame.body!.replaceAll('"', '');
+          if (key == _myKey) return;
+          print("GET Other key: ${frame.body}");
+          // 키를 받았을 때 나와 연결된 peerConnection이 없으면 생성
+          if (!pcListMap.containsKey(key)) {
+            print("Create PC for otherKey: $key");
+            pcListMap[key] = await createPeer(key);
+            // 나와 연결된 키로 offer 전송
+            sendOffer(pcListMap[key]!, key);
+          }
+        }
+      }
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    _initializeRenderers();
-    _connectSocket();
+    initRenderers();
+    permission();
   }
 
-  @override
-  void dispose() {
-    _localRenderer.dispose();
-    _remoteRenderer.dispose();
-    _peerConnection?.close();
-    _stompClient.deactivate();
-    super.dispose();
-  }
-
-  Future<void> _initializeRenderers() async {
-    await _localRenderer.initialize();
+  void initRenderers() async {
+    await  _localRenderer.initialize();
     await _remoteRenderer.initialize();
-    setState(() {});
   }
 
-  void _connectSocket() {
-    final wsAddress = dotenv.get("API_ADDRESS");
-
-    _stompClient = StompClient(
-      config: StompConfig.sockJS(
-        url: "$wsAddress/ws-chat",
-        onConnect: _onConnected,
-        onWebSocketError: (error) => print('❌ WebSocket error: $error'),
-      ),
-    );
-
-    _stompClient.activate();
+  void permission() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.location,
+      Permission.storage,
+      Permission.camera,
+      Permission.microphone
+    ].request();
   }
 
-  void _onConnected(StompFrame frame) {
-    print("✅ WebSocket connected");
-    _createLocalStream();
-
-    _stompClient.subscribe(
-      destination: '/topic/offer',
-      callback: (frame) async {
-        print("📥 Received offer: ${frame.body}");
-        if (_peerConnection?.signalingState ==
-            RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
-          print("❗️ 이미 local offer 상태, 상대 offer 무시");
-          return;
-        }
-
-        final data = json.decode(frame.body!);
-        await _peerConnection?.setRemoteDescription(
-          RTCSessionDescription(data['sdp'], data['type']),
-        );
-        _remoteDescriptionSet = true;
-
-        for (final candidate in _pendingCandidates) {
-          await _peerConnection?.addCandidate(candidate);
-        }
-        _pendingCandidates.clear();
-
-        _createAnswer();
-      },
-    );
-
-    _stompClient.subscribe(
-      destination: '/topic/answer',
-      callback: (frame) async {
-        print("📥 Received answer: ${frame.body}");
-        final data = json.decode(frame.body!);
-        await _peerConnection?.setRemoteDescription(
-          RTCSessionDescription(data['sdp'], data['type']),
-        );
-        _remoteDescriptionSet = true;
-
-        for (final candidate in _pendingCandidates) {
-          await _peerConnection?.addCandidate(candidate);
-        }
-        _pendingCandidates.clear();
-      },
-    );
-
-    _stompClient.subscribe(
-      destination: '/topic/ice',
-      callback: (frame) async {
-        print("📥 Received ICE: ${frame.body}");
-        final data = json.decode(frame.body!);
-        final candidate = RTCIceCandidate(
-          data['candidate'],
-          data['sdpMid'],
-          data['sdpMLineIndex'],
-        );
-
-        if (_remoteDescriptionSet) {
-          await _peerConnection?.addCandidate(candidate);
-        } else {
-          _pendingCandidates.add(candidate);
-        }
-      },
+  Future<void> _handleButtonPress() async {
+    print("Send My Key: $_myKey");
+    stompClient.send(
+      destination: '/app/call/key',
+      headers: {},
+      body: '"$_myKey"'
     );
   }
 
-  Future<void> _createLocalStream() async {
-    var cameraStatus = await Permission.camera.request();
-    var micStatus = await Permission.microphone.request();
+  void sendOffer(RTCPeerConnection pc, String otherKey) {
+    pc.createOffer().then((offer) {
+      print("Sending offer At: $otherKey");
+      String jsonOffer = jsonEncode(offer.toMap());
+      String body = '{"key":"$_myKey","body":$jsonOffer}';
+      print("Register Offer At $_myKey");
+      setLocalAndSendMessage(pc, offer);
+      stompClient.send(
+        destination: '/app/peer/offer/$otherKey/$_roomId',
+        headers: {},
+        body: body
+      );
+    });
+  }
 
-    if (cameraStatus.isGranted && micStatus.isGranted) {
-      final mediaConstraints = {
-        'audio': true,
-        'video': {
-          'facingMode': 'user',
-          'mandatory': {
-            'minWidth': '640',
-            'minHeight': '480',
-          },
-        },
-      };
+  void sendAnswer(RTCPeerConnection pc, String otherKey) {
+    // offer가 등록되어야 answer 생성
+    // 상대방에게 생성된 answer 전송
+    pc.createAnswer().then((answer) {
+      print("Sending answer At: $otherKey");
+      print("Register answer At: $_myKey");
+      setLocalAndSendMessage(pc, answer);
+      String destination = '/app/peer/answer/$otherKey/$_roomId';
+      String jsonAnswer = jsonEncode(answer.toMap());
+      String body = '{"key":"$_myKey","body":$jsonAnswer}';
+      stompClient.send(
+        destination: destination,
+        headers: {},
+        body: body
+      );
+    });
+  }
 
-      MediaStream stream =
-          await navigator.mediaDevices.getUserMedia(mediaConstraints);
-      _localStream = stream;
+  void setLocalAndSendMessage(RTCPeerConnection pc, RTCSessionDescription sessionDescription) {
+    pc.setLocalDescription(sessionDescription);
+  }
 
-      print('✅ Stream obtained. Video tracks: ${stream.getVideoTracks().length}');
-      _localRenderer.srcObject = stream;
-      setState(() {});
+  Future<RTCPeerConnection> createPeer(String otherKey) async {
+    print("Create Peer: $otherKey");
+    RTCPeerConnection pc = await createPeerConnection(config, sdpConstraints);
 
-      await _createPeerConnection();
+    pc.onIceCandidate = (ice) {
+      if (ice.candidate != null) {
+        String jsonIce = jsonEncode(ice.toMap());
+        String body = '{"key":"$_myKey","body":$jsonIce}';
 
-      if (isInitiator) {
-        Future.delayed(const Duration(milliseconds: 300), _createOffer);
+        stompClient.send(
+          destination: '/app/peer/iceCandidate/$otherKey/$_roomId',
+          headers: {},
+          body: body
+        );
       }
-    } else {
-      print("❗️ 카메라/마이크 권한이 거부됨");
+    };
+
+    pc.onTrack = (event) {
+      print("Get Remote Stream: $event");
+      var stream = event.streams;
+      _remoteRenderer.srcObject = stream[0];
+    };
+
+    pc.onAddStream = (stream) {
+      print(stream);
+    };
+
+    localStream.getTracks().forEach((track) {
+      pc.addTrack(track, localStream);
+    });
+
+    return pc;
+  }
+
+  void _handleInputChangeRoomId(String newText) {
+    if (newText.isNotEmpty) {
+      setState(() {
+        _roomId = newText;
+      });
+
+      startCam();
+
+      stompClient = StompClient(
+        config: StompConfig.sockJS(
+          url: socketUrlSockJS,
+          onConnect: (stompFrame) => onConnect(stompClient, stompFrame)
+        )
+      );
+
+      stompClient.activate();
+      print("Stomp Activate");
     }
   }
 
-  Future<void> _createPeerConnection() async {
-    final config = {
-      'iceServers': [
-        {'urls': 'stun:stun.l.google.com:19302'},
-      ],
-    };
-
-    _peerConnection = await createPeerConnection(config);
-
-    _localStream?.getTracks().forEach((track) {
-      _peerConnection!.addTrack(track, _localStream!);
-    });
-
-    _peerConnection!.onIceCandidate = (candidate) {
-      print("📤 Sending ICE: ${candidate.toMap()}");
-      _send('ice', {
-        'candidate': candidate.candidate,
-        'sdpMid': candidate.sdpMid,
-        'sdpMLineIndex': candidate.sdpMLineIndex,
-        'room': widget.roomId,
-      });
-    };
-
-    _peerConnection!.onTrack = (event) {
-      print('📺 onTrack received. Remote stream tracks: ${event.streams[0].getTracks().length}');
-      _remoteRenderer.srcObject = event.streams[0];
-      setState(() {});
-    };
-  }
-
-  void _createOffer() async {
-    if (_peerConnection == null) return;
-
-    RTCSessionDescription offer = await _peerConnection!.createOffer();
-    await _peerConnection!.setLocalDescription(offer);
-
-    print("📤 Sending offer: ${offer.sdp}");
-    _send('offer', {
-      'type': offer.type,
-      'sdp': offer.sdp,
-      'room': widget.roomId,
-    });
-  }
-
-  void _createAnswer() async {
-    if (_peerConnection == null) return;
-
-    RTCSessionDescription answer = await _peerConnection!.createAnswer();
-    await _peerConnection!.setLocalDescription(answer);
-
-    print("📤 Sending answer: ${answer.sdp}");
-    _send('answer', {
-      'type': answer.type,
-      'sdp': answer.sdp,
-      'room': widget.roomId,
-    });
-  }
-
-  void _send(String type, Map<String, dynamic> body) {
-    print("📤 STOMP Send => /app/$type: $body");
-    _stompClient.send(
-      destination: '/app/$type',
-      body: jsonEncode(body),
-    );
+  void _handleGetPCList() {
+    print("PC LIST: $pcListMap");
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("영상통화"),
+        title: const Text("Stomp Client Demo"),
       ),
-      body: _localRenderer.textureId != null
-          ? Column(
-              children: [
-                Expanded(
-                  child: Container(
-                    color: Colors.black,
-                    child: RTCVideoView(
-                      _localRenderer,
-                      mirror: true,
-                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: Container(
-                    color: Colors.grey[900],
-                    child: RTCVideoView(
-                      _remoteRenderer,
-                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
-                    ),
-                  ),
-                ),
-              ],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Your message from server:",
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            Text(message),
+            SizedBox(height: 20),
+            TextField(
+              onChanged: _handleInputChangeRoomId,
+              decoration: const InputDecoration(
+                labelText: 'Enter Room ID'
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _handleButtonPress,
+              child: Text("Stream")
+            ),
+            Text(
+              "My Video",
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            SizedBox(
+              width: 100,
+              height: 100,
+              child: RTCVideoView(
+                _localRenderer,
+                mirror: true,
+              )
+            ),
+            Text(
+              "Other Video",
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            SizedBox(
+              width: 100,
+              height: 100,
+              child: RTCVideoView(
+                _remoteRenderer,
+                mirror: true
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _handleGetPCList,
+              child: Text("GET PC LIST")
             )
-          : const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    stompClient.deactivate();
+    super.dispose();
+  }
+
+  startCam() async {
+    await navigator.mediaDevices
+      .getUserMedia({'audio': true, 'video': true}).then((stream) {
+        localStream = stream;
+        stream.getAudioTracks()[0].enabled = true;
+        _localRenderer.srcObject = localStream;
+      }).catchError((onError) => print(onError));
   }
 }

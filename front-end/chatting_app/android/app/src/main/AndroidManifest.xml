@@ -3,7 +3,9 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- Permissions options for the `microphone` or `speech` group -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
+        android:usesCleartextTraffic="true"
         android:label="chatting_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
