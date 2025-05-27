@@ -13,7 +13,7 @@ import org.springframework.stereotype.Controller;
 public class SignalingController {
 
   @MessageMapping("/peer/offer/{camKey}/{roomId}")
-  @SendTo("/topic/peer/offer/{camkey}/{roomId}")
+  @SendTo("/topic/peer/offer/{camKey}/{roomId}")
   public String peerHandleOffer(@Payload String offer,
                                 @DestinationVariable(value = "roomId") String roomId,
                                 @DestinationVariable(value = "camKey") String camKey) {

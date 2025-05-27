@@ -40,6 +40,7 @@ public class SecurityConfig {
           "/api/auth/**",
           "/images/profile/**",
           "/ws-chat/**",
+          "/signaling/**",
           "/topic/**",
           "/app/**"
         ).permitAll() // 인증 없이 접근 가능
