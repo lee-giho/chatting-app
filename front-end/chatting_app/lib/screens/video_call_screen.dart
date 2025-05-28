@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -14,7 +15,8 @@ class VideoCallScreen extends StatefulWidget {
   State<VideoCallScreen> createState() => _VideoCallScreenState();
 }
 
-class _VideoCallScreenState extends State<VideoCallScreen> {
+class _VideoCallScreenState extends State<VideoCallScreen>
+    with SingleTickerProviderStateMixin {
   StompClient? stompClient;
   final String socketUrlSockJS = dotenv.get("WS_ADDRESS");
   final String _myKey = const Uuid().v4();
@@ -22,25 +24,31 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   final _localRenderer = RTCVideoRenderer();
   final _remoteRenderer = RTCVideoRenderer();
-  late MediaStream localStream;
+  MediaStream? localStream;
+
+  bool micEnabled = true;
+  bool frontCamera = true;
 
   final Map<String, RTCPeerConnection> pcListMap = {};
   final Map<String, List<RTCIceCandidate>> iceCandidateQueue = {};
 
-  final Map<String, dynamic> config = {
+  final config = {
     'iceServers': [
       {'url': "stun:stun.l.google.com:19302"}
     ],
     'sdpSemantics': 'unified-plan'
   };
 
-  final Map<String, dynamic> sdpConstraints = {
+  final sdpConstraints = {
     'mandatory': {
       'OfferToReceiveAudio': true,
-      'OfferToReceiveVideo': true
+      'OfferToReceiveVideo': true,
     },
-    'optional': []
+    'optional': [],
   };
+
+  late AnimationController _animationController;
+  late Animation<double> _flipAnimation;
 
   @override
   void initState() {
@@ -49,6 +57,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     initRenderers();
     permission();
     _enterScreen();
+
+    _animationController =
+        AnimationController(duration: Duration(milliseconds: 400), vsync: this);
+    _flipAnimation =
+        Tween<double>(begin: 1.0, end: -1.0).animate(_animationController);
   }
 
   void initRenderers() async {
@@ -61,14 +74,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     await [Permission.camera, Permission.microphone].request();
   }
 
-  Future<void> _handleButtonPress() async {
-    stompClient?.send(
-      destination: '/app/call/key',
-      headers: {},
-      body: '"$_myKey"'
-    );
-  }
-
   void _enterScreen() async {
     await startCam();
 
@@ -79,9 +84,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         onWebSocketError: (dynamic err) => print("WebSocket error: $err"),
       ),
     );
-
     stompClient!.activate();
-
     setState(() {});
   }
 
@@ -90,10 +93,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       destination: '/topic/call/key',
       callback: (_) {
         stompClient?.send(
-          destination: '/app/send/key',
-          headers: {},
-          body: '"$_myKey"'
-        );
+            destination: '/app/send/key',
+            headers: {},
+            body: '"$_myKey"');
       },
     );
 
@@ -161,10 +163,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
         final body = result['body'];
         final candidate = RTCIceCandidate(
-          body['candidate'],
-          body['sdpMid'],
-          body['sdpMLineIndex'],
-        );
+            body['candidate'], body['sdpMid'], body['sdpMLineIndex']);
 
         final pc = pcListMap[key];
         if (pc == null) return;
@@ -177,17 +176,26 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         }
       },
     );
+
+    stompClient?.subscribe(
+      destination: '/topic/call/end/$_myKey/$_roomId',
+      callback: (_) {
+        Navigator.pop(context);
+      },
+    );
   }
 
   Future<void> startCam() async {
-    final stream = await navigator.mediaDevices.getUserMedia({
+    final Map<String, dynamic> constraints = {
       'audio': true,
-      'video': true,
-    });
+      'video': {
+        'facingMode': frontCamera ? 'user' : 'environment',
+      }
+    };
 
+    final stream = await navigator.mediaDevices.getUserMedia(constraints);
     localStream = stream;
     _localRenderer.srcObject = localStream;
-
     setState(() {});
   }
 
@@ -212,34 +220,100 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       }
     };
 
-    localStream.getTracks().forEach((track) {
-      pc.addTrack(track, localStream);
+    localStream?.getTracks().forEach((track) {
+      pc.addTrack(track, localStream!);
     });
 
     pcListMap[otherKey] = pc;
     return pc;
   }
 
-  void _flushIceCandidateQueue(String key) async {
-    final pc = pcListMap[key];
-    if (pc == null || !iceCandidateQueue.containsKey(key)) return;
-
-    for (final candidate in iceCandidateQueue[key]!) {
-      await pc.addCandidate(candidate);
-    }
-
-    iceCandidateQueue.remove(key);
+  Future<void> _handleButtonPress() async {
+    stompClient?.send(
+      destination: '/app/call/key',
+      headers: {},
+      body: '"$_myKey"',
+    );
   }
+
 
   void sendOffer(RTCPeerConnection pc, String otherKey) async {
     final offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-
     stompClient?.send(
       destination: '/app/peer/offer/$otherKey/$_roomId',
       headers: {},
       body: jsonEncode({'key': _myKey, 'body': offer.toMap()}),
     );
+  }
+
+  void _flushIceCandidateQueue(String key) async {
+    final pc = pcListMap[key];
+    if (pc == null || !iceCandidateQueue.containsKey(key)) return;
+    for (final candidate in iceCandidateQueue[key]!) {
+      await pc.addCandidate(candidate);
+    }
+    iceCandidateQueue.remove(key);
+  }
+
+  void _toggleMic() {
+    if (localStream != null) {
+      final audioTrack = localStream!.getAudioTracks().firstOrNull;
+      if (audioTrack != null) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setState(() {
+          micEnabled = audioTrack.enabled;
+        });
+      }
+    }
+  }
+
+  void _switchCamera() async {
+    _animationController.forward(from: 0);
+    frontCamera = !frontCamera;
+    await localStream?.dispose();
+    await startCam();
+
+    for (var pc in pcListMap.values) {
+      final senders = await pc.getSenders();
+      for (var sender in senders) {
+        if (sender.track?.kind == 'video') {
+          await sender.replaceTrack(localStream!.getVideoTracks().first);
+        }
+      }
+    }
+  }
+
+  void _endCall() {
+    // 모든 연결된 상대방에게 종료 메시지 전송
+    for (final targetKey in pcListMap.keys) {
+      stompClient?.send(
+        destination: '/app/call/end/$targetKey/$_roomId',
+        headers: {},
+        body: 'end',
+      );
+    }
+    Navigator.pop(context);
+  }
+
+  @override
+  void dispose() {
+    for (var pc in pcListMap.values) {
+      pc.close();
+    }
+    pcListMap.clear();
+
+    localStream?.getTracks().forEach((track) => track.stop());
+    _localRenderer.srcObject = null;
+    _remoteRenderer.srcObject = null;
+
+    stompClient?.deactivate();
+
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
+    _animationController.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -249,41 +323,49 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Text("My Video"),
+          AnimatedBuilder(
+            animation: _flipAnimation,
+            builder: (_, child) => Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()..scale(_flipAnimation.value, 1.0),
+              child: child,
+            ),
+            child: SizedBox(
+              width: 150,
+              height: 150,
+              child: RTCVideoView(_localRenderer, mirror: frontCamera),
+            ),
+          ),
+          Text("Remote Video"),
+          SizedBox(
+            width: 150,
+            height: 150,
+            child: RTCVideoView(_remoteRenderer),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: Icon(micEnabled ? Icons.mic : Icons.mic_off),
+                onPressed: _toggleMic,
+              ),
+              IconButton(
+                icon: Icon(Icons.cameraswitch),
+                onPressed: _switchCamera,
+              ),
+              IconButton(
+                icon: Icon(Icons.call_end, color: Colors.red),
+                onPressed: _endCall,
+              ),
+            ],
+          ),
           ElevatedButton(
             onPressed: stompClient?.isActive == true ? _handleButtonPress : null,
             child: Text("Stream"),
           ),
-          SizedBox(height: 16),
-          Text("My Video"),
-          SizedBox(width: 120, height: 120, child: RTCVideoView(_localRenderer, mirror: true)),
-          SizedBox(height: 16),
-          Text("Remote Video"),
-          SizedBox(width: 120, height: 120, child: RTCVideoView(_remoteRenderer)),
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    // 1. 모든 PeerConnection 종료
-    for (var pc in pcListMap.values) {
-      pc.close();
-    }
-    pcListMap.clear();
-
-    // 2. localStream 해제
-    localStream.getTracks().forEach((track) => track.stop());
-    _localRenderer.srcObject = null;
-    _remoteRenderer.srcObject = null;
-
-    // 3. WebSocket 종료
-    stompClient?.deactivate();
-
-    // 4. Renderer 해제
-    _localRenderer.dispose();
-    _remoteRenderer.dispose();
-
-    super.dispose();
   }
 }

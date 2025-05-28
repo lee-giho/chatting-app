@@ -51,4 +51,13 @@ public class SignalingController {
   public String sendKey(@Payload String message) {
     return message;
   }
+
+  @MessageMapping("/call/end/{camKey}/{roomId}")
+  @SendTo("/topic/call/end/{camKey}/{roomId}")
+  public String endCall(@Payload String message,
+                        @DestinationVariable(value = "roomId") String roomId,
+                        @DestinationVariable(value = "camKey") String camKey) {
+    log.info("Received call end request: to={}, roomId={}, message={}", camKey, roomId, message);
+    return message;
+  }
 }
