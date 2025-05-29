@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -28,6 +29,11 @@ class _VideoCallScreenState extends State<VideoCallScreen>
 
   bool micEnabled = true;
   bool frontCamera = true;
+
+  double _popUpVideoOriginalWidth = 640;
+  double _popUpVideoOriginalHeight = 480;
+
+  Offset _popUpVideoOffset = const Offset(0, 0); // 팝업 화면의 초기 위치
 
   final Map<String, RTCPeerConnection> pcListMap = {};
   final Map<String, List<RTCIceCandidate>> iceCandidateQueue = {};
@@ -62,12 +68,20 @@ class _VideoCallScreenState extends State<VideoCallScreen>
         AnimationController(duration: Duration(milliseconds: 400), vsync: this);
     _flipAnimation =
         Tween<double>(begin: 1.0, end: -1.0).animate(_animationController);
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   void initRenderers() async {
     await _localRenderer.initialize();
     await _remoteRenderer.initialize();
-    setState(() {});
+
+    _localRenderer.onResize = () {
+      setState(() {
+        _popUpVideoOriginalWidth = _localRenderer.videoWidth.toDouble();
+        _popUpVideoOriginalHeight = _localRenderer.videoHeight.toDouble();
+      });
+    };
   }
 
   void permission() async {
@@ -318,53 +332,110 @@ class _VideoCallScreenState extends State<VideoCallScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Video Call")),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("My Video"),
-          AnimatedBuilder(
-            animation: _flipAnimation,
-            builder: (_, child) => Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.identity()..scale(_flipAnimation.value, 1.0),
-              child: child,
-            ),
-            child: SizedBox(
-              width: 150,
-              height: 150,
-              child: RTCVideoView(_localRenderer, mirror: frontCamera),
-            ),
-          ),
-          Text("Remote Video"),
-          SizedBox(
-            width: 150,
-            height: 150,
-            child: RTCVideoView(_remoteRenderer),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    print("_remoteRenderer.renderVideoL: ${_remoteRenderer.renderVideo}");
+    double _popUpVideoWidth = MediaQuery.of(context).size.width * 0.3;
+    double _popUpVideoRatio = _popUpVideoOriginalWidth / _popUpVideoOriginalHeight;
+    return WillPopScope(
+      onWillPop: () async {
+        _endCall();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("영상 통화")
+        ),
+        body: SafeArea(
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              IconButton(
-                icon: Icon(micEnabled ? Icons.mic : Icons.mic_off),
-                onPressed: _toggleMic,
+              RTCVideoView( // 메인 화면
+                _remoteRenderer.renderVideo
+                  ? _remoteRenderer
+                  : _localRenderer,
+                mirror: frontCamera,
               ),
-              IconButton(
-                icon: Icon(Icons.cameraswitch),
-                onPressed: _switchCamera,
-              ),
-              IconButton(
-                icon: Icon(Icons.call_end, color: Colors.red),
-                onPressed: _endCall,
-              ),
+              if (_remoteRenderer.renderVideo)
+                Positioned( // 팝업 화면
+                  left: _popUpVideoOffset.dx,
+                  top: _popUpVideoOffset.dy,
+                  child: GestureDetector(
+                    onPanUpdate: (details) {
+                      final screenSize = MediaQuery.of(context).size;
+                      final safePadding = MediaQuery.of(context).padding;
+                      final double popUpHeight = _popUpVideoWidth * _popUpVideoRatio;
+            
+                      final double maxX = screenSize.width - (_popUpVideoWidth);
+                      final double maxY = screenSize.height - safePadding.top - popUpHeight;
+                      
+                      setState(() {
+                        _popUpVideoOffset = Offset(
+                          (_popUpVideoOffset.dx + details.delta.dx).clamp(0.0, maxX),
+                          (_popUpVideoOffset.dy + details.delta.dy).clamp(0.0, maxY)  
+                        );
+                      });
+                    },
+                    child: Container(
+                      width: _popUpVideoWidth,
+                      height: _popUpVideoWidth * _popUpVideoRatio,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(width: 4)
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: _popUpVideoRatio,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(5),
+                          child: RTCVideoView(
+                            _localRenderer,
+                            mirror: frontCamera,
+                            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                ),
+              Positioned( // 하단 버튼
+                bottom: 10,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        micEnabled 
+                          ? Icons.mic
+                          : Icons.mic_off,
+                        size: 40,
+                      ),
+                      onPressed: _toggleMic,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.cameraswitch,
+                        size: 40,
+                      ),
+                      onPressed: _switchCamera,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.call_end,
+                        size: 40,
+                        color: _remoteRenderer.renderVideo
+                          ? Colors.red
+                          : Colors.green
+                      ),
+                      onPressed: _remoteRenderer.renderVideo
+                        ? _endCall
+                        : _handleButtonPress
+                    ),
+                  ],
+                )
+              )            
             ],
           ),
-          ElevatedButton(
-            onPressed: stompClient?.isActive == true ? _handleButtonPress : null,
-            child: Text("Stream"),
-          ),
-        ],
+        )
       ),
     );
   }
