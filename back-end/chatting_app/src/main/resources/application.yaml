@@ -18,10 +18,13 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
-
   data:
     mongodb:
       uri: ${MONGODB_URL}
+
+    redis:
+      host: localhost
+      port: 6379
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
