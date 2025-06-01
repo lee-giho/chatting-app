@@ -1,5 +1,8 @@
 package com.giho.chatting_app.controller;
 
+import com.giho.chatting_app.dto.BooleanResponse;
+import com.giho.chatting_app.dto.BroadcastRoomList;
+import com.giho.chatting_app.dto.CreateBroadcastRoomRequest;
 import com.giho.chatting_app.service.redis.BroadcastRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,21 +17,31 @@ public class BroadcastController {
 
   // 방송 시작 (방 만들기) 엔드포인트
   @PostMapping()
-  public ResponseEntity<String> startBroadcast(@RequestParam("roomId") String roomId) {
-    broadcastRoomService.saveRoomInfo(roomId, "ACTIVE");
-    return ResponseEntity.ok("Broadcast room created: " + roomId);
+  public ResponseEntity<BooleanResponse> startBroadcast(
+          @RequestBody CreateBroadcastRoomRequest createBroadcastRoomRequest,
+          @RequestHeader("Authorization") String token) {
+    BooleanResponse booleanResponse = broadcastRoomService.saveRoomInfo(createBroadcastRoomRequest, token);
+    return ResponseEntity.ok(booleanResponse);
   }
 
   // 방송 종료 엔드포인트
   @DeleteMapping()
-  public ResponseEntity<String> endBroadcast(@RequestParam("roomId") String roomId) {
-    broadcastRoomService.deleteRoom(roomId);
-    return ResponseEntity.ok("Broadcast room deleted: " + roomId);
+  public ResponseEntity<BooleanResponse> endBroadcast(@RequestParam("roomId") String roomId) {
+    BooleanResponse booleanResponse = broadcastRoomService.deleteRoom(roomId);
+    return ResponseEntity.ok(booleanResponse);
   }
 
   // 시청자 입장 시 방 존재 여부 확인 엔드포인트
   @GetMapping("/exists")
-  public ResponseEntity<Boolean> checkRoom(@RequestParam("roomId") String roomId) {
-    return ResponseEntity.ok(broadcastRoomService.existsRoom(roomId));
+  public ResponseEntity<BooleanResponse> checkRoom(@RequestParam("roomId") String roomId) {
+    BooleanResponse booleanResponse = broadcastRoomService.existsRoom(roomId);
+    return ResponseEntity.ok(booleanResponse);
+  }
+
+  // 모든 방 불러오는 엔드포인트
+  @GetMapping()
+  public ResponseEntity<BroadcastRoomList> getAllRooms() {
+    BroadcastRoomList broadcastRoomList = broadcastRoomService.getAllRooms();
+    return ResponseEntity.ok(broadcastRoomList);
   }
 }

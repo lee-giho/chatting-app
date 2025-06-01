@@ -1,3 +1,4 @@
+import 'package:chatting_app/screens/Broadcast_room_list_screen.dart';
 import 'package:chatting_app/screens/chat_room_list_screen.dart';
 import 'package:chatting_app/screens/friend_list_screen.dart';
 import 'package:chatting_app/screens/myPage_screen.dart';
@@ -28,6 +29,7 @@ class _MainScreenState extends State<MainScreen> {
         changeTab: changeTab,
       ),
       ChatRoomListScreen(),
+      BroadcastRoomListScreen(),
       MyPageScreen()
     ];
 
@@ -52,6 +54,13 @@ class _MainScreenState extends State<MainScreen> {
               size: 30,
             ),
             label: "채팅방"
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.videocam,
+              size: 30,
+            ),
+            label: "라이브"
           ),
           BottomNavigationBarItem(
             icon: Icon(
