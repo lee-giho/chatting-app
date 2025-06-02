@@ -1,12 +1,9 @@
 package com.giho.chatting_app.service.kafka;
 
+import com.giho.chatting_app.event.*;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import com.giho.chatting_app.event.ChatMessageEvent;
-import com.giho.chatting_app.event.FriendAcceptedEvent;
-import com.giho.chatting_app.event.FriendDeclinedEvent;
-import com.giho.chatting_app.event.FriendRequestedEvent;
 import com.giho.chatting_app.webSocket.WebSocketMessageSender;
 
 import lombok.RequiredArgsConstructor;
@@ -62,5 +59,17 @@ public class KafkaConsumerService {
   public void handleMessageSend(ChatMessageEvent event) {
     
     messageSender.sendMessageNotification(event);
+  }
+
+  // 라이브 생성 전송 이벤트 처리
+  @KafkaListener(
+    topics = "broadcast-room",
+    groupId = "broadcast-service",
+    containerFactory = "objectKafkaListenerFactory"
+  )
+  public void handleCreateBroadcastRoom(BroadcastRoomCreatedEvent event) {
+
+    // 라이브 탭에 있는 사람들에게 방 정보 전송
+    messageSender.sendBroadcastRoomInfoNotification(event);
   }
 }

@@ -9,6 +9,7 @@ import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
 import com.giho.chatting_app.repository.BroadcastRoomRepository;
 import com.giho.chatting_app.repository.UserRepository;
+import com.giho.chatting_app.service.kafka.KafkaProducerService;
 import com.giho.chatting_app.util.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,6 +24,8 @@ public class BroadcastRoomService {
   private final JwtProvider jwtProvider;
 
   private final UserRepository userRepository;
+
+  private final KafkaProducerService kafkaProducerService;
 
   // 방송 방 정보 저장
   public BooleanResponse saveRoomInfo(CreateBroadcastRoomRequest createBroadcastRoomRequest, String token) {
@@ -41,6 +44,8 @@ public class BroadcastRoomService {
             .build();
 
     broadcastRoomRepository.save(broadcastRoomInfo);
+
+    kafkaProducerService.sendCreatedBroadcastRoomInfo(broadcastRoomInfo);
 
     return new BooleanResponse(true);
   }

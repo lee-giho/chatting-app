@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:chatting_app/utils/secureStorage.dart';
+import 'package:chatting_app/utils/webSocket.dart';
 import 'package:chatting_app/widget/broadcastRoomTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -23,7 +24,24 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
   @override
   void initState() {
     super.initState();
+    
     getBroadcastRooms();
+    WebSocket().addBroadcastRoomCreateListener(onShowMessage);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+
+    WebSocket().removeBroadcastRoomCreateListener(onShowMessage);
+  }
+
+  // 웹소켓 메시지 알림
+  void onShowMessage(Map<String, dynamic> message) {
+    setState(() {
+      broadcastRoomList.insert(0, message);
+    });
+    print("broadcastRoomList: $broadcastRoomList");
   }
 
   Future<void> getBroadcastRooms() async {
@@ -168,6 +186,7 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
                       itemCount: broadcastRoomList.length,
                       itemBuilder: (context, index) {
                         final broadcastRoom = broadcastRoomList[index];
+                        print("broadcastRoom: $broadcastRoom");
                         final String broadcastRoomId = broadcastRoom["roomId"];
                         return BroadcastRoomTile(
                           broadcastRoom: broadcastRoom,

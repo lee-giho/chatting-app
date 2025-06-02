@@ -3,6 +3,8 @@ package com.giho.chatting_app.service.kafka;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.giho.chatting_app.dto.BroadcastRoomInfo;
+import com.giho.chatting_app.event.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -12,10 +14,6 @@ import com.giho.chatting_app.domain.ChatMessages;
 import com.giho.chatting_app.domain.Friend;
 import com.giho.chatting_app.domain.FriendStatus;
 import com.giho.chatting_app.dto.ChatMessage;
-import com.giho.chatting_app.event.ChatMessageEvent;
-import com.giho.chatting_app.event.FriendAcceptedEvent;
-import com.giho.chatting_app.event.FriendDeclinedEvent;
-import com.giho.chatting_app.event.FriendRequestedEvent;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
 import com.giho.chatting_app.repository.ChatMessagesRepository;
@@ -130,5 +128,15 @@ public class KafkaProducerService {
       e.printStackTrace();
       throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  public void sendCreatedBroadcastRoomInfo(BroadcastRoomInfo broadcastRoomInfo) {
+    BroadcastRoomCreatedEvent event = new BroadcastRoomCreatedEvent(
+      broadcastRoomInfo.getRoomId(),
+      broadcastRoomInfo.getRoomName(),
+      broadcastRoomInfo.getSenderNickName()
+    );
+
+    kafkaTemplate.send("broadcast-room", event);
   }
 }

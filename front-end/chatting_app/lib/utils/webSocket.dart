@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
+import 'dart:convert';
 
 class WebSocket {
 
@@ -12,6 +13,7 @@ class WebSocket {
   final List<void Function(String)> friendRequestListeners = [];
   final List<void Function(String)> friendAcceptListeners = [];
   final List<void Function(String)> friendDeclineListeners = [];
+  final List<void Function(Map<String, dynamic>)> broadcastRoomCreateListeners = [];
 
   bool isConnected = false;
 
@@ -80,6 +82,19 @@ class WebSocket {
               }
             }
           );
+
+          // broadcast 생성 알림 구독
+          stompClient.subscribe(
+            destination: "/topic/broadcast-room",
+            callback: (frame) {
+              final message = frame.body ?? "";
+              final parsedMessage = json.decode(message);
+              print("라이브 방 생성: $parsedMessage");
+              for (var listener in broadcastRoomCreateListeners) {
+                listener(parsedMessage);
+              }
+            }
+          );
         },
         onWebSocketError: (error) => print("WebSocket error: $error")
       )
@@ -138,5 +153,14 @@ class WebSocket {
     friendDeclineListeners.remove(callback);
   }
 
+  // 라이브 방 생성 콜백 등록
+  void addBroadcastRoomCreateListener(void Function(Map<String, dynamic> message) callback) {
+    broadcastRoomCreateListeners.add(callback);
+  }
+
+  // 라이브 방 생성 콜백 해제
+  void removeBroadcastRoomCreateListener(void Function(Map<String, dynamic> message) callback) {
+    broadcastRoomCreateListeners.remove(callback);
+  }
   
 }
