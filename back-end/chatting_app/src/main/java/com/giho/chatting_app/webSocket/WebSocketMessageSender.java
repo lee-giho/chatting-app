@@ -1,6 +1,5 @@
 package com.giho.chatting_app.webSocket;
 
-import com.giho.chatting_app.event.BroadcastRoomCreatedEvent;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
@@ -38,13 +37,6 @@ public class WebSocketMessageSender {
   public void sendMessageNotification(ChatMessageEvent event) {
     messagingTemplate.convertAndSend(
       "/topic/chat-room/" + event.roomId(),
-      event
-    );
-  }
-
-  public void sendBroadcastRoomInfoNotification(BroadcastRoomCreatedEvent event) {
-    messagingTemplate.convertAndSend(
-      "/topic/broadcast-room",
       event
     );
   }

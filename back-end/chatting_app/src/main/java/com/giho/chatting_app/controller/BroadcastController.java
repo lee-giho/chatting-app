@@ -1,6 +1,7 @@
 package com.giho.chatting_app.controller;
 
 import com.giho.chatting_app.dto.BooleanResponse;
+import com.giho.chatting_app.dto.BroadcastRoomInfo;
 import com.giho.chatting_app.dto.BroadcastRoomList;
 import com.giho.chatting_app.dto.CreateBroadcastRoomRequest;
 import com.giho.chatting_app.service.redis.BroadcastRoomService;
@@ -17,11 +18,11 @@ public class BroadcastController {
 
   // 방송 시작 (방 만들기) 엔드포인트
   @PostMapping()
-  public ResponseEntity<BooleanResponse> startBroadcast(
+  public ResponseEntity<BroadcastRoomInfo> startBroadcast(
           @RequestBody CreateBroadcastRoomRequest createBroadcastRoomRequest,
           @RequestHeader("Authorization") String token) {
-    BooleanResponse booleanResponse = broadcastRoomService.saveRoomInfo(createBroadcastRoomRequest, token);
-    return ResponseEntity.ok(booleanResponse);
+    BroadcastRoomInfo broadcastRoomInfo = broadcastRoomService.saveRoomInfo(createBroadcastRoomRequest, token);
+    return ResponseEntity.ok(broadcastRoomInfo);
   }
 
   // 방송 종료 엔드포인트

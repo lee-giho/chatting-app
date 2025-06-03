@@ -28,7 +28,7 @@ public class BroadcastRoomService {
   private final KafkaProducerService kafkaProducerService;
 
   // 방송 방 정보 저장
-  public BooleanResponse saveRoomInfo(CreateBroadcastRoomRequest createBroadcastRoomRequest, String token) {
+  public BroadcastRoomInfo saveRoomInfo(CreateBroadcastRoomRequest createBroadcastRoomRequest, String token) {
     String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
     String userId = jwtProvider.getUserId(tokenWithoutBearer);
 
@@ -37,17 +37,15 @@ public class BroadcastRoomService {
 
     System.out.println(createBroadcastRoomRequest);
 
-    BroadcastRoomInfo broadcastRoomInfo = BroadcastRoomInfo.builder()
-            .roomId(createBroadcastRoomRequest.getRoomId())
-            .roomName(createBroadcastRoomRequest.getRoomName())
-            .senderNickName(user.getNickName())
-            .build();
+    BroadcastRoomInfo broadcastRoomInfo = new BroadcastRoomInfo(
+      createBroadcastRoomRequest.getRoomId(),
+      createBroadcastRoomRequest.getRoomName(),
+      user.getNickName()
+    );
 
     broadcastRoomRepository.save(broadcastRoomInfo);
 
-    kafkaProducerService.sendCreatedBroadcastRoomInfo(broadcastRoomInfo);
-
-    return new BooleanResponse(true);
+    return broadcastRoomInfo;
   }
 
   // 방송 방 정보 삭제 (송출 종료)

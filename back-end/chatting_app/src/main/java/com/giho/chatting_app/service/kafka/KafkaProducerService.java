@@ -130,13 +130,4 @@ public class KafkaProducerService {
     }
   }
 
-  public void sendCreatedBroadcastRoomInfo(BroadcastRoomInfo broadcastRoomInfo) {
-    BroadcastRoomCreatedEvent event = new BroadcastRoomCreatedEvent(
-      broadcastRoomInfo.getRoomId(),
-      broadcastRoomInfo.getRoomName(),
-      broadcastRoomInfo.getSenderNickName()
-    );
-
-    kafkaTemplate.send("broadcast-room", event);
-  }
 }

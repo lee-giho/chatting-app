@@ -61,15 +61,4 @@ public class KafkaConsumerService {
     messageSender.sendMessageNotification(event);
   }
 
-  // 라이브 생성 전송 이벤트 처리
-  @KafkaListener(
-    topics = "broadcast-room",
-    groupId = "broadcast-service",
-    containerFactory = "objectKafkaListenerFactory"
-  )
-  public void handleCreateBroadcastRoom(BroadcastRoomCreatedEvent event) {
-
-    // 라이브 탭에 있는 사람들에게 방 정보 전송
-    messageSender.sendBroadcastRoomInfoNotification(event);
-  }
 }

@@ -6,10 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -25,6 +23,7 @@ public class BroadcastRoomRepository {
     roomInfo.put("roomId", broadcastRoomInfo.getRoomId());
     roomInfo.put("roomName", broadcastRoomInfo.getRoomName());
     roomInfo.put("senderNickName", broadcastRoomInfo.getSenderNickName());
+    roomInfo.put("createdAt", broadcastRoomInfo.getCreatedAt().toString());
 
     redisTemplate.opsForHash().putAll(key, roomInfo);
   }
@@ -41,15 +40,17 @@ public class BroadcastRoomRepository {
     Set<String> keys = redisTemplate.keys(ROOM_KEY_PREFIX + "*");
 
     List<BroadcastRoomInfo> broadcastRoomInfoList = keys.stream()
-            .map(key -> {
-              Map<Object, Object> broadcastRoom = redisTemplate.opsForHash().entries(key);
-              return BroadcastRoomInfo.builder()
-                      .roomId(String.valueOf(broadcastRoom.get("roomId")))
-                      .roomName(String.valueOf(broadcastRoom.get("roomName")))
-                      .senderNickName(String.valueOf(broadcastRoom.get("senderNickName")))
-                      .build();
-            })
-            .toList();
+      .map(key -> {
+        Map<Object, Object> broadcastRoom = redisTemplate.opsForHash().entries(key);
+        return BroadcastRoomInfo.builder()
+          .roomId(String.valueOf(broadcastRoom.get("roomId")))
+          .roomName(String.valueOf(broadcastRoom.get("roomName")))
+          .senderNickName(String.valueOf(broadcastRoom.get("senderNickName")))
+          .createdAt(LocalDateTime.parse(String.valueOf(broadcastRoom.get("createdAt"))))
+          .build();
+      })
+      .sorted(Comparator.comparing(BroadcastRoomInfo::getCreatedAt).reversed())
+      .toList();
 
     return new BroadcastRoomList(broadcastRoomInfoList);
   }

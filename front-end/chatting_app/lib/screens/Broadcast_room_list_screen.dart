@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:chatting_app/screens/broadcast_live_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/utils/webSocket.dart';
 import 'package:chatting_app/widget/broadcastRoomTile.dart';
@@ -26,22 +27,6 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
     super.initState();
     
     getBroadcastRooms();
-    WebSocket().addBroadcastRoomCreateListener(onShowMessage);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-
-    WebSocket().removeBroadcastRoomCreateListener(onShowMessage);
-  }
-
-  // 웹소켓 메시지 알림
-  void onShowMessage(Map<String, dynamic> message) {
-    setState(() {
-      broadcastRoomList.insert(0, message);
-    });
-    print("broadcastRoomList: $broadcastRoomList");
   }
 
   Future<void> getBroadcastRooms() async {
@@ -83,7 +68,7 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
     }
   }
 
-  Future<bool> createBroadcastRoom(String roomName) async {
+  Future<void> createBroadcastRoom(String roomName) async {
     String? accessToken = await SecureStorage.getAccessToken();
     final newRoomId = const Uuid().v4();
 
@@ -107,16 +92,20 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
       log("response data = ${utf8.decode(response.bodyBytes)}");
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        bool result = data["bool"];
+        final broadcastRoomInfo = json.decode(response.body);
         
-        return result;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BroadcastLiveScreen(
+              broadcastRoomInfo: broadcastRoomInfo,
+            )
+          )
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("브로드캐스트 방이 만들어지지 않았습니다."))
         );
-        
-        return false;
       }
     } catch (e) {
       // 예외 처리
@@ -124,8 +113,6 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
       );
-
-      return false;
     }
   }
 
@@ -168,43 +155,51 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
         title: Text("라이브 목록"),
       ),
       body: SafeArea(
-        child: Container( // 전체 화면
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
-          child: broadcastRoomList.isEmpty
-            ? const Center(
-              child: Text(
-                "현재 라이브 중인 사람이 없습니다."
-              ),
-            ) 
-          : Column(
-            children: [
-              Expanded(
-                child: CustomScrollView(
-                  slivers: [
-                    SliverList.builder(
-                      itemCount: broadcastRoomList.length,
-                      itemBuilder: (context, index) {
-                        final broadcastRoom = broadcastRoomList[index];
-                        print("broadcastRoom: $broadcastRoom");
-                        final String broadcastRoomId = broadcastRoom["roomId"];
-                        return BroadcastRoomTile(
-                          broadcastRoom: broadcastRoom,
-                          onTap: () => enterBroadcastRoom(broadcastRoomId),
-                        );
-                      }
-                    )
-                  ],
-                )
-              ),
-            ],
+        child: RefreshIndicator(
+          onRefresh: getBroadcastRooms,
+          color: const Color.fromRGBO(138, 50, 50, 1),
+          child: Container( // 전체 화면
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
+            child: broadcastRoomList.isEmpty
+              ? const Center(
+                child: Text(
+                  "현재 라이브 중인 사람이 없습니다."
+                ),
+              ) 
+            : Column(
+              children: [
+                Expanded(
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverList.builder(
+                        itemCount: broadcastRoomList.length,
+                        itemBuilder: (context, index) {
+                          final broadcastRoom = broadcastRoomList[index];
+                          print("broadcastRoom: $broadcastRoom");
+                          final String broadcastRoomId = broadcastRoom["roomId"];
+                          return BroadcastRoomTile(
+                            broadcastRoom: broadcastRoom,
+                            onTap: () => enterBroadcastRoom(broadcastRoomId),
+                          );
+                        }
+                      )
+                    ],
+                  )
+                ),
+              ],
+            ),
           ),
         )
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color.fromRGBO(138, 50, 50, 1),
         onPressed: showCreateRoomDialog,
         child: const Icon(
-          Icons.add
+          Icons.add,
+          color: Colors.white,
+          size: 30,
         ),
         tooltip: "방송 시작하기",
       ),
