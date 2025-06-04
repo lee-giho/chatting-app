@@ -1,6 +1,8 @@
 import 'dart:developer';
 
-import 'package:chatting_app/screens/broadcast_live_screen.dart';
+
+import 'package:chatting_app/screens/broadcast_shower_screen.dart';
+import 'package:chatting_app/screens/broadcast_viewer_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/utils/webSocket.dart';
 import 'package:chatting_app/widget/broadcastRoomTile.dart';
@@ -97,7 +99,7 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => BroadcastLiveScreen(
+            builder: (context) => BroadcastShowerScreen(
               broadcastRoomInfo: broadcastRoomInfo,
             )
           )
@@ -144,8 +146,16 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
     );
   }
 
-  Future<void> enterBroadcastRoom(String roomId) async {
-    print(roomId);
+  Future<void> enterBroadcastRoom(Map<String, dynamic> broadcastRoomInfo) async {
+    print(broadcastRoomInfo["roomId"]);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BroadcastViewerScreen(
+          broadcastRoomInfo: broadcastRoomInfo,
+        )
+      )
+    );
   }
   
   @override
@@ -181,7 +191,7 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
                           final String broadcastRoomId = broadcastRoom["roomId"];
                           return BroadcastRoomTile(
                             broadcastRoom: broadcastRoom,
-                            onTap: () => enterBroadcastRoom(broadcastRoomId),
+                            onTap: () => enterBroadcastRoom(broadcastRoom),
                           );
                         }
                       )

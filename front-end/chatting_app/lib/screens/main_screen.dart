@@ -1,4 +1,4 @@
-import 'package:chatting_app/screens/Broadcast_room_list_screen.dart';
+import 'package:chatting_app/screens/broadcast_room_list_screen.dart';
 import 'package:chatting_app/screens/chat_room_list_screen.dart';
 import 'package:chatting_app/screens/friend_list_screen.dart';
 import 'package:chatting_app/screens/myPage_screen.dart';
