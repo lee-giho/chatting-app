@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -44,6 +45,14 @@ public class BroadcastSignalingController {
                                       @DestinationVariable(value = "roomId") String roomId) {
     log.info("[BROADCAST CandidateToViewer] roomId={}, candidate={}", roomId, candidate);
     messagingTemplate.convertAndSend("/topic/broadcast/peer/candidate/viewer/" + roomId, candidate);
+  }
+
+  @MessageMapping("/broadcast/end/{roomId}")
+  @SendTo("/topic/broadcast/end/{roomId}")
+  public String endBroadcast(@Payload String message,
+                             @DestinationVariable(value = "roomId") String roomId) {
+    log.info("[BROADCAST End] roomId={}", roomId);
+    return message;
   }
 
 }

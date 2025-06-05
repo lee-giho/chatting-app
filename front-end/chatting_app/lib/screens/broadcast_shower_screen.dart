@@ -165,8 +165,20 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
     }
   }
 
+  void _endCall() {
+    for (final viewer in _peerConnections.keys) {
+      stompClient.send(
+        destination: "/app/broadcast/end/${widget.broadcastRoomInfo["roomId"]}",
+        headers: {},
+        body: 'end'
+      );
+    }
+    Navigator.pop(context);
+  }
+
   @override
   void dispose() {
+    _localRenderer.srcObject = null;
     _localRenderer.dispose();
     _localStream?.dispose();
     for (var pc in _peerConnections.values) {
@@ -178,45 +190,51 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.broadcastRoomInfo["roomName"]),
-      ),
-      body: Column(
-        children: [
-          rendererInitialized
-          ? Expanded(
-              child: RTCVideoView(
-                _localRenderer,
-                mirror: true,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-              ),
-            )
-          : const Center(
-            child: CircularProgressIndicator()
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: Icon(
-                  micEnabled 
-                    ? Icons.mic
-                    : Icons.mic_off,
-                  size: 40,
+    return WillPopScope(
+      onWillPop: () async {
+        _endCall();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.broadcastRoomInfo["roomName"]),
+        ),
+        body: Column(
+          children: [
+            rendererInitialized
+            ? Expanded(
+                child: RTCVideoView(
+                  _localRenderer,
+                  mirror: true,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                 ),
-                onPressed: _toggleMic,
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.cameraswitch,
-                  size: 40,
-                ),
-                onPressed: _switchCamera,
               )
-            ]
-          )
-        ],
+            : const Center(
+              child: CircularProgressIndicator()
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    micEnabled 
+                      ? Icons.mic
+                      : Icons.mic_off,
+                    size: 40,
+                  ),
+                  onPressed: _toggleMic,
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.cameraswitch,
+                    size: 40,
+                  ),
+                  onPressed: _switchCamera,
+                )
+              ]
+            )
+          ],
+        ),
       ),
     );
   }

@@ -97,6 +97,13 @@ class _BroadcastViewerScreenState extends State<BroadcastViewerScreen> {
         }
       }
     );
+
+    client.subscribe(
+      destination: "/topic/broadcast/end/$roomId",
+      callback: (_) {
+        Navigator.pop(context);
+      }
+    );
   }
 
   Future<RTCPeerConnection> _createPeerConnection(String roomId) async {
@@ -131,6 +138,7 @@ class _BroadcastViewerScreenState extends State<BroadcastViewerScreen> {
 
   @override
   void dispose() {
+    _remoteRenderer.srcObject = null;
     _remoteRenderer.dispose();
     _peerConnection?.close();
     stompClient.deactivate();
