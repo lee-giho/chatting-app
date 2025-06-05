@@ -25,6 +25,10 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
   late StompClient stompClient;
   final String socketUrlSockJS = dotenv.get("WS_ADDRESS");
 
+  bool frontCamera = true;
+  bool micEnabled = true;
+  bool rendererInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,10 +44,14 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
     await _localRenderer.initialize();
     _localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true,
-      'video': {'facingMode': 'user'}
+      'video': {'facingMode': frontCamera ? 'user' : 'environment'}
     });
     _localRenderer.srcObject = _localStream;
-    setState(() {});
+    if (mounted) {
+      setState(() {
+        rendererInitialized = true;
+      });
+    }
     _connectSocket();
   }
 
@@ -136,6 +144,27 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
     return pc;
   }
 
+  Future<void> _switchCamera() async {
+    final videoTrack = _localStream?.getVideoTracks().first;
+    if (videoTrack != null) {
+      await Helper.switchCamera(videoTrack);
+      setState(() {
+        frontCamera = !frontCamera;
+      });
+    }
+  }
+
+  void _toggleMic() {
+    final audioTrack = _localStream?.getAudioTracks().first;
+    if (audioTrack != null) {
+      final enabled = audioTrack.enabled;
+      audioTrack.enabled = !enabled;
+      setState(() {
+        micEnabled = !enabled;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _localRenderer.dispose();
@@ -153,11 +182,41 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
       appBar: AppBar(
         title: Text(widget.broadcastRoomInfo["roomName"]),
       ),
-      body: Center(
-        child: RTCVideoView(
-          _localRenderer,
-          mirror: true,
-        ),
+      body: Column(
+        children: [
+          rendererInitialized
+          ? Expanded(
+              child: RTCVideoView(
+                _localRenderer,
+                mirror: true,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              ),
+            )
+          : const Center(
+            child: CircularProgressIndicator()
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: Icon(
+                  micEnabled 
+                    ? Icons.mic
+                    : Icons.mic_off,
+                  size: 40,
+                ),
+                onPressed: _toggleMic,
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.cameraswitch,
+                  size: 40,
+                ),
+                onPressed: _switchCamera,
+              )
+            ]
+          )
+        ],
       ),
     );
   }
