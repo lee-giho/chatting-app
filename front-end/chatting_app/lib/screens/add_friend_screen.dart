@@ -179,7 +179,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
       );
 
       if (response.statusCode == 200) {
-        log("acceptFriend: ${response.body}");
+        log("declineFriend: ${response.body}");
 
         await searchUserByKeyword(); // 사용자 검색 리스트 새로고침
         widget.getRequestFriendCount(); // 이전 화면에서 친구 요청 수 새로고침
@@ -191,7 +191,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
         log(response.body);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("친구 요청 수락을 실패했습니다.."))
+          const SnackBar(content: Text("친구 요청 거절을 실패했습니다.."))
         );
       }
     } catch (e) {

@@ -1,10 +1,13 @@
-import 'dart:convert';
+import 'dart:developer';
 
+import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BroadcastShowerScreen extends StatefulWidget {
   final Map<String, dynamic> broadcastRoomInfo;
@@ -165,7 +168,7 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
     }
   }
 
-  void _endCall() {
+  void _endBroadcast() {
     for (final viewer in _peerConnections.keys) {
       stompClient.send(
         destination: "/app/broadcast/end/${widget.broadcastRoomInfo["roomId"]}",
@@ -174,6 +177,41 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
       );
     }
     Navigator.pop(context);
+  }
+
+  Future<void> _deleteBroadcastRoom() async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/broadcast?roomId=${widget.broadcastRoomInfo["roomId"]}");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.delete(
+        apiAddress,
+        headers: headers,
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        log("delete broadcast room: ${response.body}");
+
+        _endBroadcast();
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("친구 방송 삭제를 실패했습니다."))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
   }
 
   @override
@@ -192,7 +230,7 @@ class _BroadcastLiveScreenState extends State<BroadcastShowerScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _endCall();
+        _deleteBroadcastRoom();
         return false;
       },
       child: Scaffold(

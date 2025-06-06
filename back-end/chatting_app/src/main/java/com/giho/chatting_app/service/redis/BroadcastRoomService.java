@@ -1,10 +1,7 @@
 package com.giho.chatting_app.service.redis;
 
 import com.giho.chatting_app.domain.User;
-import com.giho.chatting_app.dto.BooleanResponse;
-import com.giho.chatting_app.dto.BroadcastRoomInfo;
-import com.giho.chatting_app.dto.BroadcastRoomList;
-import com.giho.chatting_app.dto.CreateBroadcastRoomRequest;
+import com.giho.chatting_app.dto.*;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
 import com.giho.chatting_app.repository.BroadcastRoomRepository;
@@ -51,7 +48,7 @@ public class BroadcastRoomService {
   // 방송 방 정보 삭제 (송출 종료)
   public BooleanResponse deleteRoom(String roomId) {
     broadcastRoomRepository.delete(roomId);
-    return new BooleanResponse(true);
+    return existsRoom(roomId);
   }
 
   // 방 존재 여부 확인

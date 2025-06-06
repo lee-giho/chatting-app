@@ -1,9 +1,6 @@
 package com.giho.chatting_app.controller;
 
-import com.giho.chatting_app.dto.BooleanResponse;
-import com.giho.chatting_app.dto.BroadcastRoomInfo;
-import com.giho.chatting_app.dto.BroadcastRoomList;
-import com.giho.chatting_app.dto.CreateBroadcastRoomRequest;
+import com.giho.chatting_app.dto.*;
 import com.giho.chatting_app.service.redis.BroadcastRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
