@@ -144,17 +144,65 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
     );
   }
 
-  Future<void> enterBroadcastRoom(Map<String, dynamic> broadcastRoomInfo) async {
-    print(broadcastRoomInfo["roomId"]);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BroadcastViewerScreen(
-          broadcastRoomInfo: broadcastRoomInfo,
-        )
-      )
-    );
+  Future<bool> existsBroadcastRoom(String broadcastRoomId) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/broadcast/exists?roomId=${broadcastRoomId}");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.get(
+        apiAddress,
+        headers: headers
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final bool isExists = data["bool"];
+        log("exists broadcast room: ${data}");
+        return isExists;
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("방송 여부 확인을 실패했습니다."))
+        );
+        return false;
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+      return false;
+    }
   }
+
+  Future<void> enterBroadcastRoom(Map<String, dynamic> broadcastRoomInfo) async {
+    bool isExists = await existsBroadcastRoom(broadcastRoomInfo["roomId"]);
+    print(broadcastRoomInfo["roomId"]);
+
+    if (isExists) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BroadcastViewerScreen(
+            broadcastRoomInfo: broadcastRoomInfo,
+          )
+        )
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("이미 종료된 방송입니다."))
+      );
+      getBroadcastRooms();
+    }
+  } 
+  
   
   @override
   Widget build(BuildContext context) {
