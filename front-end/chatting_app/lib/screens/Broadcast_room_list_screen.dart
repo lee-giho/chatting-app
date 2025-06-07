@@ -1,6 +1,4 @@
 import 'dart:developer';
-
-
 import 'package:chatting_app/screens/broadcast_shower_screen.dart';
 import 'package:chatting_app/screens/broadcast_viewer_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
@@ -171,35 +169,30 @@ class _BroadcastRoomListScreenState extends State<BroadcastRoomListScreen> {
           child: Container( // 전체 화면
             width: double.infinity,
             padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
-            child: broadcastRoomList.isEmpty
-              ? const Center(
-                child: Text(
-                  "현재 라이브 중인 사람이 없습니다."
-                ),
-              ) 
-            : Column(
-              children: [
-                Expanded(
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverList.builder(
-                        itemCount: broadcastRoomList.length,
-                        itemBuilder: (context, index) {
-                          final broadcastRoom = broadcastRoomList[index];
-                          print("broadcastRoom: $broadcastRoom");
-                          final String broadcastRoomId = broadcastRoom["roomId"];
-                          return BroadcastRoomTile(
-                            broadcastRoom: broadcastRoom,
-                            onTap: () => enterBroadcastRoom(broadcastRoom),
-                          );
-                        }
-                      )
-                    ],
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: broadcastRoomList.isEmpty
+                ? [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text("현재 라이브 중인 사람이 없습니다"),
+                    ),
                   )
-                ),
-              ],
-            ),
+                ]
+                : [
+                  SliverList.builder(
+                    itemCount: broadcastRoomList.length,
+                    itemBuilder: (context, index) {
+                      final broadcastRoom = broadcastRoomList[index];
+                      return BroadcastRoomTile(
+                        broadcastRoom: broadcastRoom,
+                        onTap: () => enterBroadcastRoom(broadcastRoom)
+                      );
+                    }
+                  )
+                ]
+            )
           ),
         )
       ),
