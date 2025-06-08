@@ -5,6 +5,10 @@
 db/
 upload/
 
+pubspec.lock
+google-services.json
+GoogleService-Info.plist
+
 ### Flutter ###
 # Flutter/Dart/Pub related
 **/doc/api/
