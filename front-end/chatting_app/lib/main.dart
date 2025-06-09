@@ -1,3 +1,4 @@
+import 'package:chatting_app/config/fcm_setting.dart';
 import 'package:chatting_app/screens/splash_screen.dart';
 import 'package:chatting_app/utils/screen_size.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await fcmSetting();
   await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }

@@ -1,7 +1,7 @@
 package com.giho.chatting_app.dto;
 
-import com.giho.chatting_app.domain.ChatMessages;
-import com.giho.chatting_app.domain.ChatRoom;
+import com.giho.chatting_app.entity.ChatMessages;
+import com.giho.chatting_app.entity.ChatRoom;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.giho.chatting_app.domain.ChatRoom;
+import com.giho.chatting_app.entity.ChatRoom;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, String> {
   Optional<ChatRoom> findByCreatorIdAndVisitorId(String creatorId, String visitorId);

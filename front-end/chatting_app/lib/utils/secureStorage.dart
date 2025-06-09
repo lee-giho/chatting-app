@@ -58,6 +58,19 @@ class SecureStorage {
     return await storage.read(key: "refreshToken");
   }
 
+  // FCM token 저장
+  static Future<void> saveFcmToken(String fcmToken) async {
+    await storage.write(
+      key: "fcmToken",
+      value: fcmToken
+    );
+  }
+
+  // FCM token 읽기
+  static Future<String?> getFcmToken() async {
+    return await storage.read(key: "fcmToken");
+  }
+
   // 토큰 & 자동 로그인 삭제 (로그아웃 시)
   static Future<void> deleteTokensAndAutoLogin() async {
     await storage.delete(key: "accessToken");

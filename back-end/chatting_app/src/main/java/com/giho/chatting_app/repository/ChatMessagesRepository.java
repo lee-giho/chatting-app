@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import com.giho.chatting_app.domain.ChatMessages;
+import com.giho.chatting_app.entity.ChatMessages;
 
 public interface ChatMessagesRepository extends MongoRepository<ChatMessages, String> {
   List<ChatMessages> findByRoomId(String roomId);

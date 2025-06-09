@@ -5,7 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.entity.User;
 import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.JwtTokens;
 import com.giho.chatting_app.dto.LoginRequest;

@@ -1,6 +1,6 @@
 package com.giho.chatting_app.service.redis;
 
-import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.entity.User;
 import com.giho.chatting_app.dto.*;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
@@ -9,7 +9,6 @@ import com.giho.chatting_app.repository.UserRepository;
 import com.giho.chatting_app.service.kafka.KafkaProducerService;
 import com.giho.chatting_app.util.JwtProvider;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor

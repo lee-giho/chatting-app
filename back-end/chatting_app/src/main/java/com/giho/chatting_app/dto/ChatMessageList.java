@@ -2,7 +2,7 @@ package com.giho.chatting_app.dto;
 
 import java.util.List;
 
-import com.giho.chatting_app.domain.ChatMessages;
+import com.giho.chatting_app.entity.ChatMessages;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

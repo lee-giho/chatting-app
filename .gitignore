@@ -5,9 +5,11 @@
 db/
 upload/
 
-pubspec.lock
 google-services.json
 GoogleService-Info.plist
+*.xcconfig
+firebase.json
+firebase_options.dart
 
 ### Flutter ###
 # Flutter/Dart/Pub related

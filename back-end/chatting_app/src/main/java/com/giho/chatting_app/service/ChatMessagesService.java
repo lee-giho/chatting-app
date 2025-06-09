@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.giho.chatting_app.domain.ChatMessages;
+import com.giho.chatting_app.entity.ChatMessages;
 import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.ChatMessageList;
 import com.giho.chatting_app.repository.ChatMessagesRepository;

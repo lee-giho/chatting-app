@@ -3,7 +3,7 @@ package com.giho.chatting_app.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.entity.User;
 import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.JwtTokens;
 import com.giho.chatting_app.exception.CustomException;

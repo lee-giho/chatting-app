@@ -10,8 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.giho.chatting_app.domain.FriendStatus;
-import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.entity.User;
 import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.SearchUser;
 import com.giho.chatting_app.dto.SearchUserList;

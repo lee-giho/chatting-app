@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.entity.User;
 
 public interface UserRepository extends JpaRepository<User, String> {
   boolean existsByNickName(String nickName);

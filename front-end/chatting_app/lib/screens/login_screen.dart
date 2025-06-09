@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:chatting_app/screens/main_screen.dart';
 import 'package:chatting_app/screens/register_screen.dart';
+import 'package:chatting_app/utils/deviceInfo.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/utils/webSocket.dart';
 import 'package:flutter/material.dart';
@@ -71,24 +72,32 @@ class _LoginScreenState extends State<LoginScreen> {
         String accessToken = data["accessToken"];
         String refreshToken = data["refreshToken"];
 
-        // SecureStorage에 값 저장
-        await SecureStorage.saveAccessToken(accessToken);
-        await SecureStorage.saveRefreshToken(refreshToken);
-        await SecureStorage.saveIsAutoLogin(isAutoLogin);
+        bool isFcmTokenSaved = await registerFcmToken(accessToken);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("로그인 성공"))
-        );
+        if (isFcmTokenSaved) {
+          // SecureStorage에 값 저장
+          await SecureStorage.saveAccessToken(accessToken);
+          await SecureStorage.saveRefreshToken(refreshToken);
+          await SecureStorage.saveIsAutoLogin(isAutoLogin);
 
-        // 친구 요청 알림 WebSocket 연결
-        WebSocket().connect(id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("로그인 성공"))
+          );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const MainScreen()
-          )
-        );
+          // 친구 요청 알림 WebSocket 연결
+          WebSocket().connect(id);
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MainScreen()
+            )
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("FCM token 저장 실패"))
+          );
+        }
       } else {
         log(response.body);
 
@@ -102,6 +111,54 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
       );
+    }
+  }
+
+  Future<bool> registerFcmToken(String accessToken) async {
+    String? fcmToken = await SecureStorage.getFcmToken();
+    Map<String, String> deviceInfo = await Deviceinfo().getDeviceInfo();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/fcmToken");
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $accessToken'
+    };
+
+    try {
+      final response = await http.post(
+        apiAddress,
+        headers: headers,
+        body: json.encode({
+          "fcmToken": fcmToken,
+          "deviceType": deviceInfo["deviceType"],
+          "deviceInfo": deviceInfo["deviceInfo"]
+        })
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print("registerFcmToken response data: $data");
+        return true;
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("FCM token 저장 실패"))
+        );
+
+        return false;
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+
+      return false;
     }
   }
 

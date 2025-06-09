@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.giho.chatting_app.domain.ChatMessages;
-import com.giho.chatting_app.domain.ChatRoom;
-import com.giho.chatting_app.domain.User;
+import com.giho.chatting_app.entity.ChatMessages;
+import com.giho.chatting_app.entity.ChatRoom;
+import com.giho.chatting_app.entity.User;
 import com.giho.chatting_app.dto.BooleanResponse;
 import com.giho.chatting_app.dto.ChatRoomAndFriendInfo;
 import com.giho.chatting_app.dto.ChatRoomAndUserInfoList;

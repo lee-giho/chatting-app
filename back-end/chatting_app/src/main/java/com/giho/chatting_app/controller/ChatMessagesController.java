@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.giho.chatting_app.domain.ChatMessages;
+import com.giho.chatting_app.entity.ChatMessages;
 import com.giho.chatting_app.dto.ChatMessage;
 import com.giho.chatting_app.dto.ChatMessageList;
 import com.giho.chatting_app.service.ChatMessagesService;

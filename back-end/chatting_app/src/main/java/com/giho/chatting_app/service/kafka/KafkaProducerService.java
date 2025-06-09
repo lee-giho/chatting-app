@@ -3,16 +3,15 @@ package com.giho.chatting_app.service.kafka;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.giho.chatting_app.dto.BroadcastRoomInfo;
 import com.giho.chatting_app.event.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.giho.chatting_app.domain.ChatMessages;
-import com.giho.chatting_app.domain.Friend;
-import com.giho.chatting_app.domain.FriendStatus;
+import com.giho.chatting_app.entity.ChatMessages;
+import com.giho.chatting_app.entity.Friend;
+import com.giho.chatting_app.entity.FriendStatus;
 import com.giho.chatting_app.dto.ChatMessage;
 import com.giho.chatting_app.exception.CustomException;
 import com.giho.chatting_app.exception.ErrorCode;
