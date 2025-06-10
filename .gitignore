@@ -11,6 +11,8 @@ GoogleService-Info.plist
 firebase.json
 firebase_options.dart
 
+back-end/chatting_app/src/main/resources/firebase/
+
 ### Flutter ###
 # Flutter/Dart/Pub related
 **/doc/api/

@@ -4,9 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage msg) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print("Handling background message: ${msg.messageId}");
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling background message: ${message.messageId}");
 }
 
 Future<void> fcmSetting() async {
@@ -14,43 +14,64 @@ Future<void> fcmSetting() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-  // ios 권한 요청
-  NotificationSettings settings = await messaging.requestPermission(
+  await messaging.setForegroundNotificationPresentationOptions(
     alert: true,
     badge: true,
     sound: true
   );
+
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true
+  );
+
   print("Permission: ${settings.authorizationStatus}");
 
-  // 안드로이드 Foreground 채널 설정
+  // foreground에서 푸시 알림 표시를 위한 알림 중요도 설정 (안드로이드)
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'chatting-app',
-    "채팅앱 알림",
+    "chatting-app",
     description: '채팅앱 알림',
     importance: Importance.max
   );
-  final flnp = FlutterLocalNotificationsPlugin();
-  await flnp.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-    ?.createNotificationChannel(channel);
+  
+  // foreground에서 푸시 알림 표시를 위한 local notifications 설정
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
 
   // Foreground 알림 핸들링
-  FirebaseMessaging.onMessage.listen((msg) {
-    final notif = msg.notification;
-    final android = msg.notification?.android;
-    if (notif != null && android != null) {
-      flnp.show(
-        notif.hashCode,
-        notif.title,
-        notif.body,
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = message.notification?.android;
+
+    print("[foreground] 알림 도착!!!");
+    print("Message data: ${message.data}");
+
+    if (message.notification != null && android != null) {
+      print(">>> show() 호출 직전");
+      flutterLocalNotificationsPlugin.show(
+        notification.hashCode,
+        notification?.title,
+        notification?.body,
         NotificationDetails(
           android: AndroidNotificationDetails(
             channel.id,
             channel.name,
             channelDescription: channel.description,
-            icon: android.smallIcon
+            icon: 'ic_launcher'
           )
         )
       );
+      print(">>> show() 호출 직후");
+
+      print("메세지에 포함된 알림: ${message.notification}");
+    } else {
+      print(">>> notification 또는 android 페이로드가 null이라 알림 표시 안 함");
     }
   });
 
