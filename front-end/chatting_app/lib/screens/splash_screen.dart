@@ -29,6 +29,11 @@ class _SplashScreenState extends State<SplashScreen> {
     String? fcmToken = await SecureStorage.getFcmToken();
     Map<String, String> deviceInfo = await Deviceinfo().getDeviceInfo();
 
+    // 아이폰은 알림을 사용하지 못해서 그냥 넘김
+    if (deviceInfo["deviceType"] != "android") {
+      return true;
+    }
+
     // .env에서 서버 주소 가져오기
     final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/fcmToken");
     final headers = {

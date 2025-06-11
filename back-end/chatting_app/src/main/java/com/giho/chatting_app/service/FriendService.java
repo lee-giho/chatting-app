@@ -157,14 +157,15 @@ public class FriendService {
       // 상대방이 만든 ChatRoom
       chatRoomOpt = chatRoomRepository.findByCreatorIdAndVisitorId(friendId, myId);
     }
-    ChatRoom chatRoom = chatRoomOpt.orElseThrow(() -> new CustomException(ErrorCode.CHATROOM_NOT_FOUND));
-    
-    // 채팅방에 있는 메세지 삭제
-    List<ChatMessages> chatMessages = chatMessagesRepository.findByRoomId(chatRoom.getId());
-    chatMessagesRepository.deleteAll(chatMessages);
 
-    // 채팅방 삭제
-    chatRoomRepository.delete(chatRoom);
+    if (chatRoomOpt.isPresent()) {
+      // 채팅방에 있는 메세지 삭제
+      List<ChatMessages> chatMessages = chatMessagesRepository.findByRoomId(chatRoomOpt.get().getId());
+      chatMessagesRepository.deleteAll(chatMessages);
+
+      // 채팅방 삭제
+      chatRoomRepository.delete(chatRoomOpt.get());
+    }
 
     // 친구 삭제
     friendRepository.delete(friend);
