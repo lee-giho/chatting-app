@@ -38,8 +38,14 @@ public class UserFcmToken {
   @Column(name = "updated_at")
   private LocalDateTime updatedAt = LocalDateTime.now();
 
+  @PrePersist
+  public void prePersist() {
+    this.createdAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
+  }
+
   @PreUpdate
   public void preUpdate() {
-    updatedAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
   }
 }
