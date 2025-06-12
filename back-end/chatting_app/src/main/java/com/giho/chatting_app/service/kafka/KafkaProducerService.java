@@ -3,7 +3,9 @@ package com.giho.chatting_app.service.kafka;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.giho.chatting_app.dto.FCMNotificationRequestDto;
 import com.giho.chatting_app.event.*;
+import com.giho.chatting_app.service.FCMNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -37,6 +39,8 @@ public class KafkaProducerService {
   @Autowired
   private ChatMessagesRepository chatMessageRepository;
 
+  private final FCMNotificationService fcmNotificationService;
+
   public void sendFriendRequest(String token, String toUserId) {
 
     String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
@@ -52,6 +56,14 @@ public class KafkaProducerService {
       friendRepository.save(friend);
 
       kafkaTemplate.send("friend-request", new FriendRequestedEvent(fromUserId, toUserId)).get();
+
+      FCMNotificationRequestDto fcmNotificationRequestDto = FCMNotificationRequestDto.builder()
+        .targetUserId(toUserId)
+        .title("친구 요청")
+        .body(fromUserId + "님이 친구 요청을 보냈습니다.")
+        .build();
+
+      fcmNotificationService.sendNotificationByToken(fcmNotificationRequestDto);
     } catch (Exception e) {
       e.printStackTrace();
       throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -73,6 +85,14 @@ public class KafkaProducerService {
       friendRepository.save(friend);
 
       kafkaTemplate.send("friend-accept", new FriendAcceptedEvent(fromUserId, toUserId)).get();
+
+      FCMNotificationRequestDto fcmNotificationRequestDto = FCMNotificationRequestDto.builder()
+        .targetUserId(toUserId)
+        .title("친구 수락")
+        .body(fromUserId + "님이 친구 요청을 수락했습니다.")
+        .build();
+
+      fcmNotificationService.sendNotificationByToken(fcmNotificationRequestDto);
     } catch (Exception e) {
       e.printStackTrace();
       throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -123,6 +143,14 @@ public class KafkaProducerService {
       );
       
       kafkaTemplate.send("chat-room", event);
+
+      FCMNotificationRequestDto fcmNotificationRequestDto = FCMNotificationRequestDto.builder()
+        .targetUserId(message.getFriendId())
+        .title(senderId)
+        .body(message.getContent())
+        .build();
+
+      fcmNotificationService.sendNotificationByToken(fcmNotificationRequestDto);
     } catch (Exception e) {
       e.printStackTrace();
       throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);

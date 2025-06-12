@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class ChatMessage {
   private String content;
   private String roomId;
+  private String friendId;
 }

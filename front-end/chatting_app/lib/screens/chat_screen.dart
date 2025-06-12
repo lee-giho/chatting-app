@@ -197,7 +197,8 @@ class _ChatScreenState extends State<ChatScreen> {
       destination: "/app/chat.send",
       body: json.encode({
         "content": message,
-        "roomId": widget.chatRoomId
+        "roomId": widget.chatRoomId,
+        "friendId": friendInfo["id"]
       }),
       headers: {
         'Authorization': 'Bearer $accessToken'
