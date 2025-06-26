@@ -1,6 +1,7 @@
 package com.giho.chatting_app.service.kafka;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.UUID;
 
 import com.giho.chatting_app.dto.FCMNotificationRequestDto;
@@ -130,6 +131,7 @@ public class KafkaProducerService {
         .sender(senderId)
         .content(message.getContent())
         .sentAt(LocalDateTime.now())
+        .readBy(new HashSet<>())
         .build();
       
       chatMessageRepository.save(chatMessage);
@@ -139,7 +141,8 @@ public class KafkaProducerService {
         chatMessage.getRoomId(),
         chatMessage.getSender(),
         chatMessage.getContent(),
-        chatMessage.getSentAt()
+        chatMessage.getSentAt(),
+        chatMessage.getReadBy()
       );
       
       kafkaTemplate.send("chat-room", event);

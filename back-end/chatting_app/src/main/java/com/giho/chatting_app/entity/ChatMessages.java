@@ -1,6 +1,8 @@
 package com.giho.chatting_app.entity;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -22,4 +24,5 @@ public class ChatMessages {
   private String sender;
   private String content;
   private LocalDateTime sentAt;
+  private Set<String> readBy = new HashSet<>();
 }

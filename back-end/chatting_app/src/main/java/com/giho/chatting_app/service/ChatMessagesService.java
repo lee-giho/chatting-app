@@ -2,6 +2,11 @@ package com.giho.chatting_app.service;
 
 import java.util.List;
 
+import com.giho.chatting_app.exception.CustomException;
+import com.giho.chatting_app.exception.ErrorCode;
+import com.giho.chatting_app.util.JwtProvider;
+import com.giho.chatting_app.webSocket.WebSocketMessageSender;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +16,15 @@ import com.giho.chatting_app.dto.ChatMessageList;
 import com.giho.chatting_app.repository.ChatMessagesRepository;
 
 @Service
+@RequiredArgsConstructor
 public class ChatMessagesService {
   
-  @Autowired
-  private ChatMessagesRepository chatMessageRepository;
+
+  private final ChatMessagesRepository chatMessageRepository;
+
+  private final WebSocketMessageSender messageSender;
+
+  private final JwtProvider jwtProvider;
 
   public ChatMessageList getChatMessageList(String chatRoomId) {
     List<ChatMessages> chatMessageList = chatMessageRepository.findByRoomIdOrderBySentAtAsc(chatRoomId);
@@ -34,5 +44,21 @@ public class ChatMessagesService {
     chatMessageRepository.deleteAll(chatMessages);
 
     return new BooleanResponse(true);
+  }
+
+  public void markMessageAsRead(String token, String messageId) {
+
+    String tokenWithoutBearer = jwtProvider.getTokenWithoutBearer(token);
+    String userId = jwtProvider.getUserId(tokenWithoutBearer);
+
+    ChatMessages chatMessages = chatMessageRepository.findById(messageId)
+      .orElseThrow(() -> new CustomException(ErrorCode.MESSAGE_NOT_FOUND));
+
+    if (!chatMessages.getReadBy().contains(userId)) {
+      chatMessages.getReadBy().add(userId);
+      chatMessageRepository.save(chatMessages);
+
+      messageSender.sendReadReceipt(chatMessages.getRoomId(), messageId, userId);
+    }
   }
 }

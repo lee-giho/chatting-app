@@ -39,9 +39,11 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
 
     chatConnect();
-    getUsersInfo();
-    getChatMessageList();
-
+    getUsersInfo().then((_) async {
+      await getChatMessageList(); // 메시지 불러오기
+      await markUnreadMessageAsRead(); // 채팅방 들어왔을 때 읽음 처리
+    });
+    
     // messageFocus 발생했을 때 아래로 스크롤
     messageFocus.addListener(() {
       if (messageFocus.hasFocus) {
@@ -82,9 +84,15 @@ class _ChatScreenState extends State<ChatScreen> {
               if (body != null) {
                 final decodedData = jsonDecode(body);
                 print("응답 데이터: $decodedData");
+
                 setState(() {
                   chatMessageList.add(decodedData);
                 });
+
+                // 수신 메시지 읽음 처리
+                if (decodedData["sender"] != myInfo["id"]) {
+                  sendReadReceipt(decodedData["id"]);
+                }
 
                 // 프레임 렌더링 후 스크롤 아래로 이동
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,6 +102,32 @@ class _ChatScreenState extends State<ChatScreen> {
                       duration: Duration(milliseconds: 300),
                       curve: Curves.easeOut
                     );
+                  }
+                });
+              }
+            }
+          );
+
+          stompClient.subscribe(
+            destination: "/topic/chat-room/read/${widget.chatRoomId}",
+            callback: (frame) {
+              final body = frame.body;
+              if (body != null) {
+                final data = json.decode(body);
+                log("AAAAASDFASDF: $data");
+                final String messageId = data["messageId"];
+                final String readerId = data["readerId"];
+
+                setState(() {
+                  final msg = chatMessageList.firstWhere(
+                    (msg) => msg["id"] == messageId,
+                    orElse: () => null
+                  );
+                  if (msg != null) {
+                    final List<dynamic> readByList = msg["readBy"];
+                    if (!readByList.contains(readerId)) {
+                      readByList.add(readerId);
+                    }
                   }
                 });
               }
@@ -210,6 +244,43 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Future<void> sendReadReceipt(String messageid) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/chatMessage/read?messageId=$messageid");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.post(
+        apiAddress,
+        headers: headers
+      );
+
+      if (response.statusCode != 200) {
+        log("읽음 처리 실패: ${response.statusCode}");
+      }
+    } catch (e) {
+      log("읽음 처리 에러: $e");
+    }
+  }
+
+  Future<void> markUnreadMessageAsRead() async {
+    for (var msg in List.from(chatMessageList)) {
+      print("msg: $msg");
+      final readByList = msg["readBy"];
+      final sender = msg["sender"];
+      final id = msg["id"];
+
+      if (sender != null &&
+          sender != myInfo["id"] &&
+          !readByList.contains(myInfo["id"])
+      ) {
+        await sendReadReceipt(id);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,22 +305,6 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
             child: Column(
               children: [
-                // Expanded( // 메시지 보는 곳
-                //   child: CustomScrollView(
-                //     slivers: [
-                //       SliverList.builder(
-                //         itemCount: chatMessageList.length,
-                //         itemBuilder: (context, index) {
-                //           final chatMessage = chatMessageList[index];
-                //           return ChatMessageBox(
-                //             chatMessage: chatMessage,
-                //             isMine: chatMessage["sender"] == myInfo["id"],
-                //           );
-                //         }
-                //       )
-                //     ],
-                //   ),
-                // ),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -284,6 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemBuilder: (context, index) {
                       final chatMessage = chatMessageList[index];
                       return ChatMessageBox(
+                        key: ValueKey(chatMessage["id"]),
                         chatMessage: chatMessage,
                         isMine: chatMessage["sender"] == myInfo["id"]
                       );

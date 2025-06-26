@@ -7,6 +7,8 @@ import com.giho.chatting_app.event.ChatMessageEvent;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class WebSocketMessageSender {
@@ -38,6 +40,18 @@ public class WebSocketMessageSender {
     messagingTemplate.convertAndSend(
       "/topic/chat-room/" + event.roomId(),
       event
+    );
+  }
+
+  public void sendReadReceipt(String roomId, String messageId, String readerId) {
+    Map<String, String> payload = Map.of(
+      "messageId", messageId,
+      "readerId", readerId
+    );
+    System.out.println("read payload: " + payload);
+    messagingTemplate.convertAndSend(
+      "/topic/chat-room/read/" + roomId,
+      payload
     );
   }
 }

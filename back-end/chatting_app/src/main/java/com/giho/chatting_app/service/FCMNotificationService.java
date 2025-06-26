@@ -10,6 +10,7 @@ import com.google.firebase.messaging.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,10 +24,19 @@ public class FCMNotificationService {
 
   public String sendNotificationByToken(FCMNotificationRequestDto fcmNotificationRequestDto) {
 
-    Optional<UserFcmToken> userFcmToken = userFcmTokenRepository.findByUserId(fcmNotificationRequestDto.getTargetUserId());
+    List<UserFcmToken> userFcmToken = userFcmTokenRepository.findByUserId(fcmNotificationRequestDto.getTargetUserId());
 
-    if (userFcmToken.isPresent()) {
-      String fcmToken = userFcmToken.get().getFcmToken();
+    System.out.println(userFcmToken);
+
+    if (userFcmToken == null || userFcmToken.isEmpty()) {
+      return "해당 사용자의 FCM 토큰이 존재하지 않습니다. tartgetUserId = " + fcmNotificationRequestDto.getTargetUserId();
+    }
+
+    int successCount = 0;
+    int failCount = 0;
+
+    for (UserFcmToken tokenObj : userFcmToken) {
+      String fcmToken = tokenObj.getFcmToken();
       if (fcmToken != null) {
         Notification notification = Notification.builder()
           .setTitle(fcmNotificationRequestDto.getTitle())
@@ -40,16 +50,16 @@ public class FCMNotificationService {
 
         try {
           firebaseMessaging.send(message);
-          return "알림을 성공적으로 전송했습니다. targetUserId = " + fcmNotificationRequestDto.getTargetUserId();
+          successCount++;
         } catch (FirebaseMessagingException e) {
           e.printStackTrace();
-          return "알림 보내기를 실패했습니다. targetUserId = " + fcmNotificationRequestDto.getTargetUserId();
+          failCount++;
         }
       } else {
-        return "서버에 저장된 해당 유저의 FcmToken이 존재하지 않습니다. targetUserId = " + fcmNotificationRequestDto.getTargetUserId();
+        failCount++;
       }
-    } else {
-      return "해당 유저가 존재하지 않습니다. targetUserId = " + fcmNotificationRequestDto.getTargetUserId();
     }
+    return String.format("알림 전송 완료: 성공 %d건, 실패 %d건, targetUserId = %s",
+      successCount, failCount, fcmNotificationRequestDto.getTargetUserId());
   }
 }
