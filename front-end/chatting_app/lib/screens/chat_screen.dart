@@ -282,6 +282,45 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> deleteChatRoom(String chatRoomId) async {
+    String? accessToken = await SecureStorage.getAccessToken();
+
+    // .env에서 서버 주소 가져오기
+    final apiAddress = Uri.parse("${dotenv.get("API_ADDRESS")}/api/chatRoom?chatRoomId=$chatRoomId");
+    final headers = {'Authorization': 'Bearer $accessToken'};
+
+    try {
+      final response = await http.delete(
+        apiAddress,
+        headers: headers
+      );
+
+      log("response data = ${utf8.decode(response.bodyBytes)}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        bool result = data["bool"];
+        if (result) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("채팅방이 삭제되었습니다."))
+          );
+        }
+      } else {
+        log(response.body);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("채팅방 삭제하기 실패"))
+        );
+      }
+    } catch (e) {
+      // 예외 처리
+      log(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("네트워크 오류: ${e.toString()}"))
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -292,12 +331,14 @@ class _ChatScreenState extends State<ChatScreen> {
             Icons.arrow_back
           ),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
         ),
         centerTitle: true,
         title: Text(
-          widget.chatRoomId,
+          friendInfo.isNotEmpty
+          ? friendInfo["nickName"]
+          : "",
           style: TextStyle(
             fontWeight: FontWeight.bold
           ),
@@ -432,7 +473,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     splashColor: Colors.transparent,
                     highlightColor: Colors.transparent,
-                    onPressed: () {},
+                    onPressed: () async {
+                      await deleteChatRoom(widget.chatRoomId);
+                      Navigator.pop(context); // drawer 닫기
+                      Future.delayed(Duration(milliseconds: 250), () {
+                        Navigator.pop(context, true); // ChatScreen 닫기
+                      });
+                    },
                   ),
                 )
               ]

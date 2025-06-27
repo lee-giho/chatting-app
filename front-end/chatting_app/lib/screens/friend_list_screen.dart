@@ -249,7 +249,6 @@ class _FriendListScreenState extends State<FriendListScreen> {
                   );
 
                   if (result != null) {
-                    widget.changeTab(1);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -257,7 +256,11 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           chatRoomId: result
                         )
                       )
-                    );
+                    ).then((result) {
+                      if (result) {
+                        widget.changeTab(1);
+                      }
+                    });
                   }
                 },
               )
@@ -386,7 +389,6 @@ class _FriendListScreenState extends State<FriendListScreen> {
                           isMine: false,
                           isFriend: true,
                           onEnterChatRoom: (result) {
-                            widget.changeTab(1);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -394,7 +396,11 @@ class _FriendListScreenState extends State<FriendListScreen> {
                                   chatRoomId: result
                                 )
                               )
-                            );
+                            ).then((result) {
+                              if (result) {
+                                widget.changeTab(1);
+                              }
+                            });
                           }
                         ),
                       );

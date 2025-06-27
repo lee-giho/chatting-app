@@ -161,7 +161,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
                                     chatRoomId: chatRoomId
                                   )
                                 )
-                              );
+                              ).then((result) {
+                                if (result) {
+                                  getChatRoomList();
+                                }
+                              });
                             },
                             child: ChatRoomTile(
                               chatRoom: chatRoom
