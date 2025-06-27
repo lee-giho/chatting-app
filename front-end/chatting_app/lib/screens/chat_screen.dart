@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:chatting_app/screens/video_call_screen.dart';
 import 'package:chatting_app/utils/secureStorage.dart';
 import 'package:chatting_app/widget/chatMessageBox.dart';
+import 'package:chatting_app/widget/userTile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -285,15 +286,159 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            widget.chatRoomId,
-            style: TextStyle(
-              fontWeight: FontWeight.bold
-            ),
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        centerTitle: true,
+        title: Text(
+          widget.chatRoomId,
+          style: TextStyle(
+            fontWeight: FontWeight.bold
           ),
         ),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: Icon(
+                Icons.menu
+              ),
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
+          )
+        ],
+      ),
+      endDrawer: Drawer(
+        child: SafeArea(
+          child: Container(
+            color: Colors.grey[300],
+            padding: const EdgeInsets.all(6.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "대화상대",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                            Column( // 채팅방 사용자
+                              children: [
+                                UserTile(
+                                  userInfo: myInfo,
+                                  isMine: true,
+                                  isFriend: false,
+                                  onEnterChatRoom: (_) {} 
+                                ),
+                                UserTile(
+                                  userInfo: friendInfo,
+                                  isMine: true,
+                                  isFriend: false,
+                                  onEnterChatRoom: (_) {} 
+                                )
+                              ]
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "메뉴",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Column(
+                                  children: [
+                                    ClipOval(
+                                      child: Material(
+                                        color: Colors.green,
+                                        child: InkWell(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => VideoCallScreen(
+                                                  chatRoomId: widget.chatRoomId,
+                                                )
+                                              )
+                                            );
+                                          },
+                                          child: SizedBox(
+                                            width: 48,
+                                            height: 48,
+                                            child: Icon(
+                                              Icons.call,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Text("영상통화")
+                                  ],
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.logout,
+                      color: Colors.red,
+                    ),
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    onPressed: () {},
+                  ),
+                )
+              ]
+            ),
+          )
+        )
       ),
       body: SafeArea(
         child: GestureDetector(
@@ -305,33 +450,6 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: EdgeInsets.fromLTRB(25, 0, 25, 0),
             child: Column(
               children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VideoCallScreen(
-                          chatRoomId: widget.chatRoomId,
-                        )
-                      )
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    minimumSize: Size(64, 56),
-                    backgroundColor: Color.fromRGBO(121, 55, 64, 1)
-                  ),
-                  child: const Text(
-                    "영상통화",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold
-                    ),
-                  )
-                ),
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
